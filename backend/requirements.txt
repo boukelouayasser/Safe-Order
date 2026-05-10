@@ -1,0 +1,23 @@
+# Web framework
+fastapi
+uvicorn[standard]
+gunicorn
+
+# Database
+sqlalchemy
+alembic
+psycopg2-binary
+
+# Auth
+python-jose[cryptography]
+bcrypt
+python-multipart
+
+# Validation & Settings
+pydantic
+pydantic-settings
+email-validator
+
+# Utilities
+python-dateutil
+reportlab

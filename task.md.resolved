@@ -1,0 +1,70 @@
+# Safe Order — Task Tracker
+
+## Step 1: Project Scaffolding ✅
+## Step 2: Authentication & User Management ✅
+## Step 3: Order Pipeline & Core Business Logic ✅
+
+- [x] Orders router (`routers/orders.py`) — 11 endpoints:
+  - POST / — create order (merchant)
+  - GET /link/{token} — access order via unique link
+  - POST /link/{token}/fill — customer fills delivery info
+  - GET /pipeline/counts — pipeline stage counts
+  - GET /pipeline/{status} — orders by status
+  - GET /all — all merchant orders
+  - GET /{id} — order details (with access control)
+  - GET /{id}/tracking — tracking events
+  - GET /track/{code} — public tracking by code
+  - PATCH /{id}/status — advance pipeline stage (with transition validation)
+  - GET /customer/by-phone/{phone} — customer order history
+- [x] Smart Badge computation: SAFE_PAY > RISK > LOYAL > NEW
+- [x] Status transition validation (CONFIRMATION→PREPARATION→DISPATCH→DELIVERY→DELIVERED/RETURN)
+- [x] Risk prediction integration (auto-calculates on customer fill)
+- [x] Tracking event auto-creation
+
+## Step 4: Safe Pay — Simulated Payment System ✅
+
+- [x] Payments router (`routers/payments.py`) — 4 endpoints:
+  - POST /process — simulated CIB/Dahabia/BaridiMob (always succeeds in demo)
+  - GET /order/{id} — order payment history
+  - GET /wallet/{phone} — customer wallet summary
+  - POST /refund/{id} — refund deposit for returned orders
+
+## Step 5: Safe Track ✅
+
+- [x] Tracking router (`routers/tracking.py`) — 3 endpoints:
+  - GET /track/{code} — public tracking with timeline
+  - POST /track/{code}/remark — customer adds remark (with date detection → D-1 alert)
+  - GET /by-phone/{phone} — customer order history
+
+## Step 6: Feedback, Trust Score & Stats ✅
+
+- [x] Feedback router (`routers/feedback.py`) — 5 endpoints:
+  - POST /submit — post-delivery feedback (1-5 stars, criteria, comment)
+  - GET /order/{id} — order feedback
+  - GET /merchant/{id} — merchant feedbacks
+  - GET /trust-score/{id} — Trust Score (0-100, levels: bronze/silver/gold/platinum)
+  - POST /analyze-return/{id} — trigger AI return analysis
+- [x] Trust Score calculation (weighted: delivery 40%, rating 30%, volume 15%, Safe Pay 15%)
+- [x] Stats router (`routers/stats.py`) — 2 endpoints:
+  - GET /dashboard — full merchant stats (rates, revenue, best sellers, wilayas, feedbacks)
+  - GET /insights — Safe Insights (AI cause breakdown + recommendations)
+- [x] Admin router (`routers/admin.py`) — 5 endpoints:
+  - GET /dashboard — global platform stats
+  - GET /users — user list (filterable)
+  - PATCH /users/{id}/toggle-active — activate/deactivate
+  - GET /orders — all orders (filterable)
+  - GET /merchants — merchant list with profiles
+
+## 🎯 BACKEND COMPLETE — 40+ API endpoints
+
+## Step 7: Merchant Dashboard Frontend — NEXT
+- [ ] Landing page / role selection
+- [ ] Merchant login/register
+- [ ] Safe Standards acceptance
+- [ ] Dashboard with 6-category pipeline
+- [ ] Order details with badges
+- [ ] Statistics page
+- [ ] Safe Insights page
+
+## Step 8: Customer Interface Frontend — AFTER
+## Steps 9–12: Pending

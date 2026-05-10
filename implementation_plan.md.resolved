@@ -1,0 +1,210 @@
+# Safe Order — Implementation Plan
+
+## 1. Overview
+
+**Safe Order** is an Algerian e-commerce security platform that solves the 30-45% delivery return rate problem through:
+- **Safe Pay**: Smart deposit system — customer pays upfront, deducted at delivery
+- **Safe Track**: Real-time package tracking
+- **Safe Standards**: Mandatory quality conditions for merchants
+- **Safe Insights**: AI analytics on return causes
+- **Trust Score**: Reputation scoring for merchants, customers, and couriers
+
+**Primary color**: `#0080ff` (blue from logo). Supporting palette: Navy `#0D3B66`, Green `#0D6E3F`, Gold `#F0AE1A`.
+
+---
+
+## 2. Architecture
+
+```
+┌─────────────────────┐         ┌─────────────────────┐
+│   Frontend (React)  │  REST   │  Backend (FastAPI)   │
+│   Vercel (free)     │◄───────►│  Railway (free)      │
+│   TypeScript + CSS  │         │  Python 3.11+        │
+└─────────────────────┘         └──────────┬──────────┘
+                                           │
+                                    ┌──────▼──────┐
+                                    │  PostgreSQL  │
+                                    │  Railway     │
+                                    └─────────────┘
+```
+
+### Tech Stack (per SRS)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| Styling | CSS Modules (minimalistic, professional — NOT Tailwind per user request) |
+| Backend | Python FastAPI |
+| Database | PostgreSQL (via SQLAlchemy + Alembic) |
+| Auth | JWT (access 15min + httpOnly refresh) + simulated SMS OTP |
+| Payments | Simulated CIB/Dahabia/BaridiMob gateway |
+| AI/ML Models | Python scripts in `/backend/models/` |
+| Hosting | Vercel (frontend), Railway (backend + DB) |
+
+> [!IMPORTANT]
+> The SRS specifies Tailwind CSS, but the user explicitly asked for **minimalistic design that does NOT look AI-generated** with **vanilla CSS / CSS Modules**. I will use clean CSS with a professional design system instead of Tailwind.
+
+---
+
+## 3. Phased Execution Plan
+
+I will build this **one step at a time**, waiting for your approval between each step.
+
+### Step 1: Project Scaffolding & Backend Foundation
+- Initialize `/frontend` (Vite + React + TypeScript)
+- Initialize `/backend` (FastAPI project structure)
+- Create `.env` and `.env.example` files
+- Set up database models (SQLAlchemy) for all entities
+- Set up Alembic migrations
+
+### Step 2: Authentication & User Management
+- Merchant registration (with simulated OTP)
+- Customer identification (by phone, no password — simulated OTP)
+- JWT auth system (access + refresh tokens)
+- RBAC: Customer / Merchant / Admin roles
+- Admin seeded account
+- Safe Standards acceptance flow
+
+### Step 3: Order Pipeline & Core Business Logic
+- Order creation (via unique customer link)
+- 6-category pipeline: Confirmation → Preparation → Dispatch → Delivery → Delivered → Return Processed
+- Smart Badges: Safe Pay / New / Loyal / Risk
+- Order status transitions
+- Tracking code generation
+
+### Step 4: Safe Pay — Simulated Payment System
+- Simulated CIB / Dahabia / BaridiMob payment gateway
+- Deposit blocking, deduction at delivery, refund on return
+- Payment status tracking
+- Wallet / financial history for customers
+
+### Step 5: Safe Track — Real-Time Tracking
+- Step-by-step timeline per order
+- Status updates from merchant side
+- Customer remark system
+- Simulated delivery company integration
+
+### Step 6: Feedback, Trust Score & Safe Insights
+- Post-delivery feedback (1-5 stars, criteria, comment)
+- Trust Score calculation (0-100)
+- Risk Flag computation
+- `/backend/models/` — AI analysis scripts:
+  - `return_analyzer.py` — Identifies return causes from order + feedback data
+  - `recommendation_engine.py` — Personalized recommendations for merchants
+  - `risk_predictor.py` — Non-pickup risk prediction
+
+### Step 7: Merchant Dashboard Frontend
+- Dashboard with 6-category pipeline
+- Order details with badges
+- Statistics page (delivery rate, return rate, Trust Score, best sellers)
+- Safe Insights page (AI analysis results)
+- Tracking label print (PDF generation)
+- Safe Standards onboarding
+
+### Step 8: Customer Interface Frontend
+- Order sheet via unique link (no account required)
+- Safe Pay payment flow
+- Cart (active orders)
+- Safe Track timeline
+- Feedback form
+- Wallet / purchase history
+
+### Step 9: Admin Portal
+- Standards validation
+- User management
+- Global dashboard with platform metrics
+- Dispute/moderation interface
+
+### Step 10: i18n (Arabic, French, English)
+- Translation system with RTL support for Arabic
+- Language selector on home page
+- All UI strings externalized
+
+### Step 11: Testing & Demo Setup
+- Seeded demo data (merchants, customers, orders in various states)
+- Test accounts with pre-configured scenarios
+- Demo shortcuts (skip OTP, instant payment, fast-forward order states)
+- Testing guide document
+
+### Step 12: Deployment Guide
+- `DEPLOYMENT.md` with step-by-step instructions
+- Vercel configuration
+- Railway configuration (backend + PostgreSQL)
+- Environment variables mapping
+- Testing instructions for the jury
+
+---
+
+## 4. Database Schema (Key Entities)
+
+| Table | Key Fields |
+|-------|-----------|
+| `users` | id, role (merchant/customer/admin), first_name, last_name, phone, email, wilaya, municipality, address, trust_score, is_verified, language |
+| `merchant_profiles` | user_id, delivery_companies[], safe_standards_accepted, store_name |
+| `orders` | id, merchant_id, customer_id, tracking_code, status (6 states), badge, product_name, product_description, product_photos[], price, safe_pay_amount, delivery_fee, remaining_amount, delivery_company, remark, created_at |
+| `payments` | id, order_id, customer_id, amount, method (CIB/Dahabia/BaridiMob), status (pending/confirmed/refunded), type (deposit/delivery) |
+| `tracking_events` | id, order_id, status, timestamp, note |
+| `feedbacks` | id, order_id, customer_id, merchant_id, rating (1-5), criteria[], comment |
+| `return_analyses` | id, order_id, cause, recommendation, created_at |
+| `safe_academy` | id, title, type (video/article/podcast), url, theme, language |
+
+---
+
+## 5. Simulated Services (for Demo)
+
+| Service | Real | Demo Simulation |
+|---------|------|-----------------|
+| SMS OTP | Twilio | Always accepts code `123456` |
+| CIB Payment | CIB Gateway | Instant success with any card `4111...` |
+| Dahabia | Algeria Post | Instant success with any card number |
+| BaridiMob | BaridiMob API | Instant success with any account |
+| Delivery Tracking | Yalidine/ZR Express API | Backend auto-advances status on timer |
+| Push Notifications | Firebase | Console log + in-app notification |
+
+---
+
+## 6. Demo Test Accounts
+
+| Role | Email | Password | Phone |
+|------|-------|----------|-------|
+| Admin | admin@safeorder.dz | Admin123! | 0550000000 |
+| Merchant | merchant@safeorder.dz | Merchant123! | 0551111111 |
+| Customer | — (no account, phone-based) | — | 0552222222 |
+
+OTP for all accounts in demo mode: `123456`
+
+---
+
+## 7. Open Questions
+
+> [!IMPORTANT]
+> **Font choice**: I plan to use **Inter** (clean, professional, widely used in SaaS products). Is this acceptable, or do you have a specific font preference?
+
+> [!IMPORTANT]
+> **Safe Academy**: The SRS mentions YouTube integration. For the demo, should I include a few placeholder cards linking to real YouTube videos about e-commerce, or skip this feature for now?
+
+> [!IMPORTANT]
+> **Language priority for demo**: The SRS requires AR/FR/EN. For the jury presentation, which language should be the **default / most polished**? I'll implement all three but want to prioritize one for quality.
+
+> [!IMPORTANT]
+> **Delivery companies**: The SRS mentions Yalidine, ZR Express, Maystro. For the demo dropdown, should I include all major Algerian delivery companies, or just these three?
+
+---
+
+## 8. Verification Plan
+
+### Automated Tests
+- Backend: pytest for all API endpoints (auth, orders, payments, tracking)
+- Frontend: Manual browser testing via browser tool
+
+### Demo Walkthrough Testing
+1. **Merchant flow**: Register → Accept Safe Standards → Create order link → View pipeline → Print label → View stats → View Safe Insights
+2. **Customer flow**: Open link → Fill order form → Pay Safe Pay → Track order → Leave feedback
+3. **Admin flow**: Login → View dashboard → Moderate orders → View platform stats
+4. **Payment simulation**: Complete CIB/Dahabia/BaridiMob payment → Verify deposit → Verify deduction at delivery
+5. **Return scenario**: Order marked as returned → Safe Pay deposit kept → AI analysis generated
+
+### Manual Verification
+- Full end-to-end demo in browser
+- Responsive design check (mobile + desktop)
+- RTL layout verification for Arabic
+- All demo shortcuts working
