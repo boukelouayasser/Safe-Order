@@ -11,7 +11,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from app.database import Base
 from app.models import *  # noqa: F401,F403 — Import all models so Alembic detects them
 
+from app.config import settings
+
 config = context.config
+
+# Use DATABASE_URL env var (Railway) if set, otherwise fall back to app settings (SQLite locally)
+_db_url = os.environ.get("DATABASE_URL", "") or settings.DATABASE_URL
+if _db_url.startswith("postgres://"):
+    _db_url = "postgresql://" + _db_url[len("postgres://"):]
+config.set_main_option("sqlalchemy.url", _db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
