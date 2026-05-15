@@ -90,10 +90,10 @@ export default function CustomerOrder() {
     e.preventDefault()
     if (!token) return
     if (!/^0\d{9}$/.test(form.phone.replace(/\s/g, ''))) {
-      setError('Numéro de téléphone invalide (format 0XXXXXXXXX)')
+      setError('Invalid phone number (format 0XXXXXXXXX)')
       return
     }
-    if (!form.wilaya) { setError('Wilaya: ' + t('common.required')); return }
+    if (!form.wilaya) { setError('Province: ' + t('common.required')); return }
     if (!form.delivery_company) { setError(t('field.delivery_company') + ': ' + t('common.required')); return }
 
     setSubmitting(true)
@@ -106,7 +106,7 @@ export default function CustomerOrder() {
       setOrder(updated)
       setStep(updated.safe_pay_amount > 0 ? 'pay' : 'done')
     } catch (err: any) {
-      setError(err.message || 'Erreur')
+      setError(err.message || 'Error')
     } finally {
       setSubmitting(false)
     }
@@ -128,7 +128,7 @@ export default function CustomerOrder() {
       })
       setStep('done')
     } catch (err: any) {
-      setError(err.message || 'Paiement refusé')
+      setError(err.message || 'Payment failed')
     } finally {
       setSubmitting(false)
     }
@@ -267,7 +267,7 @@ export default function CustomerOrder() {
                   </div>
                   <div className="cs-field" style={{ marginBottom: 0 }}>
                     <label>{t('pay.card_holder')}</label>
-                    <input className="cs-input" value={payForm.card_holder} onChange={e => setPayForm(f => ({ ...f, card_holder: e.target.value }))} placeholder="NOM PRENOM" />
+                    <input className="cs-input" value={payForm.card_holder} onChange={e => setPayForm(f => ({ ...f, card_holder: e.target.value }))} placeholder="FIRST NAME LAST NAME" />
                   </div>
                   <div className="cs-row">
                     <div className="cs-field" style={{ marginBottom: 0 }}>
@@ -297,7 +297,7 @@ export default function CustomerOrder() {
                           setPayForm(f => ({ ...f, expiry: mo + '/' + e.target.value }))
                         }}
                       >
-                        <option value="">Année</option>
+                        <option value="">Year</option>
                         {Array.from({ length: 11 }, (_, i) => {
                           const y = String(new Date().getFullYear() + i).slice(-2)
                           return <option key={y} value={y}>{y}</option>

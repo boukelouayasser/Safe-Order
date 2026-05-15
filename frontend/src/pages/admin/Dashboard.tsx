@@ -60,10 +60,10 @@ export default function AdminDashboard() {
         {stats && (
           <>
             <div className="grid grid--4" style={{ marginBottom: 20 }}>
-              <StatCard label="Marchands" value={stats.users.merchants} icon={<span>🏪</span>} />
-              <StatCard label="Clients" value={stats.users.customers} icon={<span>🛒</span>} color="var(--color-green)" />
-              <StatCard label="Commandes" value={stats.orders.total} icon={<span>📦</span>} color="var(--color-gold)" />
-              <StatCard label="CA livré" value={`${stats.financial.total_revenue.toLocaleString()} DA`} icon={<span>💰</span>} />
+              <StatCard label="Merchants" value={stats.users.merchants} icon={<span>🏪</span>} />
+              <StatCard label="Customers" value={stats.users.customers} icon={<span>🛒</span>} color="var(--color-green)" />
+              <StatCard label="Orders" value={stats.orders.total} icon={<span>📦</span>} color="var(--color-gold)" />
+              <StatCard label="Revenue delivered" value={`${stats.financial.total_revenue.toLocaleString()} DA`} icon={<span>💰</span>} />
             </div>
 
             <div className="grid grid--2" style={{ marginBottom: 20 }}>
@@ -72,21 +72,21 @@ export default function AdminDashboard() {
                 <div style={{ display: 'flex', justifyContent: 'space-around' }}>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 24, fontWeight: 700, color: '#10b981' }}>{stats.orders.delivery_rate}%</div>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Taux de livraison</div>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Delivery rate</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>{stats.orders.return_rate}%</div>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Taux de retour</div>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Return rate</div>
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 24, fontWeight: 700 }}>{stats.platform.avg_merchant_trust_score}</div>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Trust score moyen</div>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Average trust score</div>
                   </div>
                 </div>
               </Card>
 
               <Card>
-                <div className="order-detail__section-title">💳 Safe Pay collecté</div>
+                <div className="order-detail__section-title">💳 Safe Pay collected</div>
                 <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-green)', textAlign: 'center', padding: 12 }}>
                   {stats.financial.total_safe_pay_collected.toLocaleString()} DA
                 </div>
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
         )}
 
         <Card style={{ marginBottom: 16 }}>
-          <div className="order-detail__section-title">🏪 Marchands ({merchants.length})</div>
+          <div className="order-detail__section-title">🏪 Merchants ({merchants.length})</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {merchants.slice(0, 8).map((m: any) => (
               <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 10, background: '#f8fafc', borderRadius: 8 }}>
@@ -105,7 +105,7 @@ export default function AdminDashboard() {
                   <div style={{ fontSize: 11, color: '#64748b' }}>{m.email} · {m.phone}</div>
                 </div>
                 <div style={{ textAlign: 'end', fontSize: 11 }}>
-                  <div>{m.total_delivered}/{m.total_orders} livrées</div>
+                  <div>{m.total_delivered}/{m.total_orders} delivered</div>
                   <div style={{ color: '#64748b' }}>Trust {m.trust_score?.toFixed(0)}/100</div>
                 </div>
               </div>
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Card>
-          <div className="order-detail__section-title">👥 Utilisateurs récents ({users.length})</div>
+          <div className="order-detail__section-title">👥 Recent users ({users.length})</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {users.slice(0, 10).map((u: any) => (
               <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', padding: 8, fontSize: 12, borderBottom: '1px solid #f1f5f9' }}>

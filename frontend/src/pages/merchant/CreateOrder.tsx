@@ -27,8 +27,8 @@ export default function CreateOrder() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (!form.product_name.trim()) return setError('Nom du produit requis')
-    if (!form.product_price || parseFloat(form.product_price) <= 0) return setError('Prix invalide')
+    if (!form.product_name.trim()) return setError('Product name required')
+    if (!form.product_price || parseFloat(form.product_price) <= 0) return setError('Invalid price')
 
     setLoading(true)
     try {
@@ -41,7 +41,7 @@ export default function CreateOrder() {
       })
       setResult({ link: data.customer_link, code: data.order.tracking_code, orderId: data.order.id })
     } catch (err: any) {
-      setError(err.message || "Erreur lors de la création de la commande")
+      setError(err.message || "Error creating order")
     } finally {
       setLoading(false)
     }
@@ -70,13 +70,13 @@ export default function CreateOrder() {
     const safePay = (parseFloat(form.product_price) * parseFloat(form.safe_pay_percentage) / 100).toFixed(0)
     const lines = [
       `🛡 Safe Order — ${form.product_name}`,
-      `Prix: ${parseFloat(form.product_price).toLocaleString()} DA · Livraison: ${parseFloat(form.delivery_fee).toLocaleString()} DA`,
-      `Acompte Safe Pay: ${parseInt(safePay).toLocaleString()} DA`,
+      `Price: ${parseFloat(form.product_price).toLocaleString()} DA · Delivery: ${parseFloat(form.delivery_fee).toLocaleString()} DA`,
+      `Safe Pay deposit: ${parseInt(safePay).toLocaleString()} DA`,
       ``,
-      `Confirmez votre commande :`,
+      `Confirm your order:`,
       result.link,
       ``,
-      `Code de suivi: ${result.code}`,
+      `Tracking code: ${result.code}`,
     ]
     const text = encodeURIComponent(lines.join('\n'))
     window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener,noreferrer')
@@ -151,16 +151,16 @@ export default function CreateOrder() {
       <Card padding="lg">
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{t('nav.create_order')}</h2>
         <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 24 }}>
-          Créez une fiche produit. Un lien unique sera généré pour votre client.
+          Create a product listing. A unique link will be generated for your customer.
         </p>
 
         <form className="auth-card__form" onSubmit={handleSubmit}>
           <Input
-            label="Nom du produit"
+            label="Product name"
             value={form.product_name}
             onChange={e => update('product_name', e.target.value)}
             required
-            placeholder="Écouteurs Bluetooth TWS Pro"
+            placeholder="Bluetooth Wireless Earbuds Pro"
           />
           <div className="form-field">
             <label className="form-field__label">Description</label>
@@ -168,14 +168,14 @@ export default function CreateOrder() {
               className="form-field__input"
               value={form.product_description}
               onChange={e => update('product_description', e.target.value)}
-              placeholder="Décrivez le produit en détail..."
+              placeholder="Describe the product in detail..."
               rows={3}
               style={{ resize: 'vertical' }}
             />
           </div>
           <div className="auth-card__row">
             <Input
-              label="Prix (DA)"
+              label="Price (DA)"
               type="number"
               value={form.product_price}
               onChange={e => update('product_price', e.target.value)}
@@ -184,7 +184,7 @@ export default function CreateOrder() {
               min="0"
             />
             <Input
-              label="Frais de livraison (DA)"
+              label="Delivery fee (DA)"
               type="number"
               value={form.delivery_fee}
               onChange={e => update('delivery_fee', e.target.value)}
@@ -193,14 +193,14 @@ export default function CreateOrder() {
             />
           </div>
           <Input
-            label="Safe Pay — % du prix comme acompte"
+            label="Safe Pay — % of price as deposit"
             type="number"
             value={form.safe_pay_percentage}
             onChange={e => update('safe_pay_percentage', e.target.value)}
             placeholder="20"
             min="0"
             max="100"
-            hint={form.product_price ? `Acompte: ${(parseFloat(form.product_price) * parseFloat(form.safe_pay_percentage || '0') / 100).toFixed(0)} DA` : ''}
+            hint={form.product_price ? `Deposit: ${(parseFloat(form.product_price) * parseFloat(form.safe_pay_percentage || '0') / 100).toFixed(0)} DA` : ''}
           />
 
           {error && (
@@ -210,7 +210,7 @@ export default function CreateOrder() {
           )}
 
           <Button type="submit" fullWidth loading={loading}>
-            Créer la commande
+            Create order
           </Button>
         </form>
       </Card>

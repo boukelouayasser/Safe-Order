@@ -46,7 +46,7 @@ export default function Statistics() {
           </div>
           <div>
             <div className="md-kpi-value">{overview?.total_orders ?? 0}</div>
-            <div className="md-kpi-label">Commandes totales</div>
+            <div className="md-kpi-label">Total orders</div>
           </div>
         </div>
 
@@ -56,7 +56,7 @@ export default function Statistics() {
           </div>
           <div>
             <div className="md-kpi-value">{overview?.delivery_rate ?? 0}%</div>
-            <div className="md-kpi-label">Taux de livraison</div>
+            <div className="md-kpi-label">Delivery rate</div>
           </div>
         </div>
 
@@ -98,28 +98,28 @@ export default function Statistics() {
           <div className="md-section-label">Revenus</div>
           <div className="md-rev-row">
             <div className="md-rev-block">
-              <div className="label">CA Total (Livré)</div>
+              <div className="label">Total Revenue (Delivered)</div>
               <div className="val">
                 {(revenue?.total ?? 0).toLocaleString()} <span className="unit">DA</span>
               </div>
-              <div className="sub">Période en cours · livraisons réussies</div>
+              <div className="sub">Current period · successful deliveries</div>
             </div>
             <div className="md-rev-block">
-              <div className="label">Safe Pay Collecté</div>
+              <div className="label">Safe Pay Collected</div>
               <div className="val green">
                 {(revenue?.safe_pay_collected ?? 0).toLocaleString()} <span className="unit">DA</span>
               </div>
-              <div className="sub">Total protégé via Safe Pay</div>
+              <div className="sub">Total protected via Safe Pay</div>
             </div>
           </div>
         </div>
 
         <div className="md-card md-card-pad">
-          <div className="md-section-label">Ce mois-ci</div>
+          <div className="md-section-label">This month</div>
           <div className="md-month-row">
-            <div className="md-month-cell blue"><div className="v">{current_month?.orders ?? 0}</div><div className="l">Commandes</div></div>
-            <div className="md-month-cell green"><div className="v">{current_month?.delivered ?? 0}</div><div className="l">Livrées</div></div>
-            <div className="md-month-cell red"><div className="v">{current_month?.returned ?? 0}</div><div className="l">Retours</div></div>
+            <div className="md-month-cell blue"><div className="v">{current_month?.orders ?? 0}</div><div className="l">Orders</div></div>
+            <div className="md-month-cell green"><div className="v">{current_month?.delivered ?? 0}</div><div className="l">Delivered</div></div>
+            <div className="md-month-cell red"><div className="v">{current_month?.returned ?? 0}</div><div className="l">Returns</div></div>
           </div>
         </div>
       </div>
@@ -128,9 +128,9 @@ export default function Statistics() {
       {months.length > 0 && (
         <div className="md-card md-chart-card">
           <div>
-            <div className="md-section-label" style={{ marginBottom: 4 }}>Évolution mensuelle</div>
+            <div className="md-section-label" style={{ marginBottom: 4 }}>Monthly evolution</div>
             <div style={{ fontSize: 13, color: 'var(--md-ink-3)' }}>
-              Volume de commandes par statut · {months.length} derniers mois
+              Order volume by status · last {months.length} months
             </div>
           </div>
 
@@ -156,7 +156,7 @@ export default function Statistics() {
             </div>
           </div>
           <div className="md-legend">
-            <span className="li"><span className="sw" style={{ background: 'var(--md-green-2)' }} />Livré</span>
+            <span className="li"><span className="sw" style={{ background: 'var(--md-green-2)' }} />Delivered</span>
             <span className="li"><span className="sw" style={{ background: 'linear-gradient(180deg,#94a3b8,#64748b)' }} />En cours</span>
             <span className="li"><span className="sw" style={{ background: 'var(--md-red)' }} />Retour</span>
           </div>
@@ -177,7 +177,7 @@ export default function Statistics() {
                   <div>
                     <div className="md-seller-name">{item.product_name}</div>
                     <div className="md-seller-meta">
-                      {item.order_count} commande{item.order_count > 1 ? 's' : ''}
+                      {item.order_count} order{item.order_count > 1 ? 's' : ''}
                     </div>
                   </div>
                   <div className="md-seller-amount">{(item.revenue ?? 0).toLocaleString()} DA</div>
@@ -188,9 +188,9 @@ export default function Statistics() {
         </div>
 
         <div className="md-card md-card-pad">
-          <div className="md-section-label">Répartition par wilaya</div>
+          <div className="md-section-label">Distribution by province</div>
           {wilayas.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--md-ink-3)', margin: 0 }}>Aucune donnée.</p>
+            <p style={{ fontSize: 13, color: 'var(--md-ink-3)', margin: 0 }}>No data.</p>
           ) : (
             wilayas.map((w, i) => (
               <div className="md-wilaya-row" key={i}>

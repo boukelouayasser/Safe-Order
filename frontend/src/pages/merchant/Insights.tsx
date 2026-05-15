@@ -9,7 +9,7 @@ const RING_CIRC = 2 * Math.PI * 40 // r = 40
 
 const PRIORITY_META: Record<string, { cls: 'warn' | 'good'; tag: string }> = {
   high: { cls: 'warn', tag: 'Prioritaire' },
-  medium: { cls: 'warn', tag: 'Recommandé' },
+  medium: { cls: 'warn', tag: 'Recommended' },
   low: { cls: 'good', tag: 'Optionnel' },
 }
 
@@ -36,11 +36,11 @@ export default function Insights() {
             <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
         </div>
-        <h3>Safe Insights pas encore disponible</h3>
-        <p>{data?.message || "L'analyse IA est disponible à partir de 10 commandes."}</p>
+        <h3>Safe Insights not yet available</h3>
+        <p>{data?.message || "AI analysis is available from 10 orders."}</p>
         {data?.orders_needed ? (
           <p style={{ marginTop: 10, color: 'var(--md-blue-700)', fontWeight: 600 }}>
-            Encore {data.orders_needed} commande{data.orders_needed > 1 ? 's' : ''} nécessaire{data.orders_needed > 1 ? 's' : ''}.
+            {data.orders_needed} more order{data.orders_needed > 1 ? 's' : ''} needed.
           </p>
         ) : null}
       </div>
@@ -60,7 +60,7 @@ export default function Insights() {
         <div className="md-card md-insight-stat blue">
           <div>
             <div className="big">{totalReturns}</div>
-            <div className="l">Retours analysés</div>
+            <div className="l">Returns analyzed</div>
           </div>
           <div style={{ marginLeft: 'auto' }}>
             <div className="md-kpi-icon blue">
@@ -72,7 +72,7 @@ export default function Insights() {
         <div className="md-card md-insight-stat amber">
           <div>
             <div className="big">{causes.length}</div>
-            <div className="l">Causes identifiées</div>
+            <div className="l">Causes identified</div>
           </div>
           <div style={{ marginLeft: 'auto' }}>
             <div className="md-kpi-icon amber">
@@ -112,7 +112,7 @@ export default function Insights() {
 
           {causes.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--md-ink-3)', margin: 0 }}>
-              Aucune cause identifiée pour l'instant.
+              No causes identified yet.
             </p>
           ) : (
             causes.map((cause, i) => {

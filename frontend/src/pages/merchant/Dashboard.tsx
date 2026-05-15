@@ -10,10 +10,10 @@ import { useAuth } from '../../context/AuthContext'
 
 const PIPELINE_STAGES = [
   { key: 'confirmation', label: 'Confirmation', cls: 's-conf' },
-  { key: 'preparation', label: 'Préparation', cls: 's-prep' },
-  { key: 'dispatch', label: 'Expédition', cls: 's-ship' },
-  { key: 'delivery', label: 'Livraison', cls: 's-deliv' },
-  { key: 'delivered', label: 'Livré', cls: 's-done' },
+  { key: 'preparation', label: 'Preparation', cls: 's-prep' },
+  { key: 'dispatch', label: 'Dispatch', cls: 's-ship' },
+  { key: 'delivery', label: 'Delivery', cls: 's-deliv' },
+  { key: 'delivered', label: 'Delivered', cls: 's-done' },
   { key: 'return_processed', label: 'Retour', cls: 's-return' },
 ] as const
 
@@ -169,7 +169,7 @@ export default function Dashboard() {
               <thead>
                 <tr>
                   <th>Code</th>
-                  <th>Produit</th>
+                  <th>Product</th>
                   <th>Client</th>
                   <th>Wilaya</th>
                   <th>Prix</th>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                           : <span className="md-mute">—</span>}
                       </td>
                       <td>{badge ? <span className={`md-badge ${badge.cls}`}>{badge.label}</span> : <span className="md-mute">—</span>}</td>
-                      <td>{new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
+                      <td>{new Date(order.created_at).toLocaleDateString('en-US')}</td>
                     </tr>
                   )
                 })}

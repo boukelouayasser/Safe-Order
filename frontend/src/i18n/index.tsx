@@ -18,12 +18,12 @@ interface LanguageState {
 const LanguageContext = createContext<LanguageState | null>(null)
 
 function readInitialLocale(): Locale {
-  if (typeof window === 'undefined') return 'fr'
+  if (typeof window === 'undefined') return 'en'
   const stored = localStorage.getItem(STORAGE_KEY)
   if (stored === 'fr' || stored === 'en' || stored === 'ar') return stored
   const browser = navigator.language?.slice(0, 2)
   if (browser === 'en' || browser === 'ar') return browser
-  return 'fr'
+  return 'en'
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {

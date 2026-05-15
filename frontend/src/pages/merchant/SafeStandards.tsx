@@ -12,20 +12,20 @@ import LanguagePicker from '../../components/LanguagePicker'
 const CONDITIONS = [
   {
     id: 'photos',
-    title: 'Photos authentiques',
-    desc: "Publiez uniquement des photos réelles de vos produits. Pas de photos trouvées sur internet ou retouchées de manière trompeuse.",
+    title: 'Authentic photos',
+    desc: "Post only real photos of your products. No photos found on the internet or digitally altered in a deceptive way.",
     icon: '📸',
   },
   {
     id: 'description',
-    title: 'Description complète',
-    desc: "Chaque produit doit avoir une description détaillée : taille, couleur, matériau, poids, et tout détail important pour le client.",
+    title: 'Complete description',
+    desc: "Each product must have a detailed description: size, color, material, weight, and any important details for the customer.",
     icon: '📝',
   },
   {
     id: 'packaging',
-    title: 'Emballage soigné',
-    desc: "Emballez vos produits avec soin pour éviter les dommages pendant le transport. Utilisez du papier bulle et des cartons adaptés.",
+    title: 'Careful packaging',
+    desc: "Package your products carefully to prevent damage during transport. Use bubble wrap and suitable cardboard.",
     icon: '📦',
   },
 ]
@@ -70,7 +70,7 @@ export default function SafeStandards() {
         </div>
         <h2 className="standards__title" style={{ textAlign: 'center' }}>Safe Standards</h2>
         <p className="standards__subtitle" style={{ textAlign: 'center' }}>
-          Pour bénéficier de Safe Pay et protéger vos livraisons, vous devez respecter ces 3 conditions.
+          To benefit from Safe Pay and protect your deliveries, you must follow these 3 conditions.
         </p>
 
         {CONDITIONS.map(c => (

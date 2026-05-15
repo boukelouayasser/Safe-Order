@@ -48,7 +48,7 @@ export default function CustomerHome() {
       paymentsApi.getWalletHistory(phone, period).catch(() => ({ buckets: [] })),
     ])
       .then(([list, w, h]: any[]) => { setOrders(list); setWallet(w); setHistory(h.buckets || []) })
-      .catch((err: any) => setError(err.message || 'Erreur'))
+      .catch((err: any) => setError(err.message || 'Error'))
       .finally(() => setLoading(false))
   }, [user, period])
 

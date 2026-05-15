@@ -9,10 +9,10 @@ import { Card, OrderBadge, StatusBadge, Spinner, EmptyState, Button } from '../.
 
 const PIPELINE_STAGES = [
   { key: 'confirmation', label: 'Confirmation', color: '#0080ff' },
-  { key: 'preparation', label: 'Préparation', color: '#f59e0b' },
-  { key: 'dispatch', label: 'Expédition', color: '#8b5cf6' },
-  { key: 'delivery', label: 'Livraison', color: '#06b6d4' },
-  { key: 'delivered', label: 'Livré', color: '#10b981' },
+  { key: 'preparation', label: 'Preparation', color: '#f59e0b' },
+  { key: 'dispatch', label: 'Dispatch', color: '#8b5cf6' },
+  { key: 'delivery', label: 'Delivery', color: '#06b6d4' },
+  { key: 'delivered', label: 'Delivered', color: '#10b981' },
   { key: 'return_processed', label: 'Retour', color: '#ef4444' },
 ]
 
@@ -38,11 +38,11 @@ export default function Orders() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div>
           <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
-            {counts?.total || 0} commande{(counts?.total || 0) > 1 ? 's' : ''} au total
+            {counts?.total || 0} order{(counts?.total || 0) > 1 ? 's' : ''} total
           </span>
         </div>
         <Button size="sm" onClick={() => navigate('/merchant/create-order')}>
-          + Nouvelle commande
+          + New order
         </Button>
       </div>
 
@@ -67,8 +67,8 @@ export default function Orders() {
       <Card padding="sm">
         {orders.length === 0 ? (
           <EmptyState
-            title="Aucune commande"
-            description={`Aucune commande en "${PIPELINE_STAGES.find(s => s.key === activeStage)?.label}"`}
+            title="No orders"
+            description={`No orders in "${PIPELINE_STAGES.find(s => s.key === activeStage)?.label}"`}
           />
         ) : (
           <div className="table-container" style={{ border: 'none' }}>
@@ -76,9 +76,9 @@ export default function Orders() {
               <thead>
                 <tr>
                   <th>Code</th>
-                  <th>Produit</th>
-                  <th>Client</th>
-                  <th>Wilaya</th>
+                  <th>Product</th>
+                  <th>Customer</th>
+                  <th>Province</th>
                   <th>Prix</th>
                   <th>Safe Pay</th>
                   <th>Badge</th>
@@ -97,7 +97,7 @@ export default function Orders() {
                       {order.safe_pay_amount > 0 ? `${order.safe_pay_amount.toLocaleString()} DA` : '—'}
                     </td>
                     <td><OrderBadge badge={order.badge} /></td>
-                    <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
+                    <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{new Date(order.created_at).toLocaleDateString('en-US')}</td>
                   </tr>
                 ))}
               </tbody>

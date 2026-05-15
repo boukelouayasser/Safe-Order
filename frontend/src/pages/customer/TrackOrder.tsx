@@ -10,9 +10,9 @@ import CustomerHeader from '../../components/CustomerHeader'
 const FEEDBACK_CRITERIA = [
   { value: 'conforming', label: '✅ Conforme' },
   { value: 'fast_delivery', label: '⚡ Livraison rapide' },
-  { value: 'good_packaging', label: '📦 Bien emballé' },
-  { value: 'damaged', label: '❌ Endommagé' },
-  { value: 'different_color', label: '🎨 Couleur différente' },
+  { value: 'good_packaging', label: '📦 Well packaged' },
+  { value: 'damaged', label: '❌ Damaged' },
+  { value: 'different_color', label: '�愈 Different color' },
   { value: 'non_conforming', label: '⚠️ Non conforme' },
 ]
 
@@ -85,7 +85,7 @@ export default function TrackOrder() {
       })
       setFbDone(true)
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de la soumission')
+      setError(err.message || 'Error submitting')
     } finally {
       setFbSubmitting(false)
     }
@@ -109,10 +109,10 @@ export default function TrackOrder() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
             </svg>
-            Suivi en temps réel
+            Real-time tracking
           </div>
           <h1 className="cs-h1">Suivre ma commande</h1>
-          <p className="cs-sub">Entrez votre code de suivi pour voir l'avancement de votre colis.</p>
+          <p className="cs-sub">Enter your tracking code to see your package progress.</p>
         </div>
 
         <div className="cs-card cs-card-pad">
@@ -163,7 +163,7 @@ export default function TrackOrder() {
               </div>
               {data.estimated_delivery && (
                 <div className="cs-note" style={{ marginTop: 12 }}>
-                  ⏰ Livraison estimée : {data.estimated_delivery}
+                  ⏰ Estimated delivery: {data.estimated_delivery}
                 </div>
               )}
             </div>
@@ -175,7 +175,7 @@ export default function TrackOrder() {
                   <div key={evt.id} className="cs-tl-item">
                     <div className={`cs-tl-dot ${i === events.length - 1 ? 'active' : ''} ${evt.status === 'delivered' ? 'success' : ''} ${evt.status === 'return_processed' ? 'danger' : ''}`} />
                     <div className="cs-tl-time">
-                      {new Date(evt.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(evt.created_at).toLocaleString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <StatusPill status={evt.status} />
                     {evt.note && <div className="cs-tl-note">{evt.note}</div>}
@@ -189,7 +189,7 @@ export default function TrackOrder() {
                 <div className="cs-card-label">⭐ Votre avis</div>
                 {fbDone || feedback ? (
                   <div className="cs-success">
-                    ✓ Merci ! Votre avis ({feedback?.rating ?? fbRating}/5) a été enregistré.
+                    ✓ Thank you! Your rating ({feedback?.rating ?? fbRating}/5) has been recorded.
                   </div>
                 ) : (
                   <div className="cs-form">
@@ -233,18 +233,18 @@ export default function TrackOrder() {
             )}
 
             <div className="cs-card cs-card-pad">
-              <div className="cs-card-label">💬 Ajouter une remarque</div>
+              <div className="cs-card-label">💬 Add a note</div>
               {remarkSent ? (
-                <div className="cs-success">✓ Remarque envoyée</div>
+                <div className="cs-success">✓ Note sent</div>
               ) : (
                 <div className="cs-form">
                   <div className="cs-field" style={{ marginBottom: 0 }}>
-                    <label>Votre téléphone</label>
+                    <label>Your phone</label>
                     <input className="cs-input" placeholder="0551234567" value={remarkPhone} onChange={e => setRemarkPhone(e.target.value)} />
                   </div>
                   <div className="cs-field" style={{ marginBottom: 0 }}>
-                    <label>Remarque</label>
-                    <input className="cs-input" placeholder="Ex : disponible après 17h…" value={remark} onChange={e => setRemark(e.target.value)} />
+                    <label>Note</label>
+                    <input className="cs-input" placeholder="Ex: available after 5 PM..." value={remark} onChange={e => setRemark(e.target.value)} />
                   </div>
                   <button
                     className="cs-btn cs-btn--outline cs-btn--block"
@@ -254,7 +254,7 @@ export default function TrackOrder() {
                         await trackingApi.addRemark(order.tracking_code, remark, remarkPhone)
                         setRemarkSent(true)
                       } catch (err: any) {
-                        setError(err.message || 'Erreur')
+                        setError(err.message || 'Error')
                       }
                     }}
                   >

@@ -9,10 +9,10 @@ import { feedbackApi } from '../../api/endpoints'
 import { Card, StatusBadge, OrderBadge, Button, Input, Spinner } from '../../components/ui'
 
 const NEXT_STATUS: Record<string, { label: string; status: string }> = {
-  confirmation: { label: 'Passer en préparation', status: 'preparation' },
-  preparation: { label: 'Expédier le colis', status: 'dispatch' },
-  dispatch: { label: 'Marquer en livraison', status: 'delivery' },
-  delivery: { label: 'Marquer comme livré', status: 'delivered' },
+  confirmation: { label: 'Move to preparation', status: 'preparation' },
+  preparation: { label: 'Ship the package', status: 'dispatch' },
+  dispatch: { label: 'Mark as delivery', status: 'delivery' },
+  delivery: { label: 'Mark as delivered', status: 'delivered' },
 }
 
 export default function OrderDetail() {
@@ -73,7 +73,7 @@ export default function OrderDetail() {
     if (!order) return
     setUpdating(true)
     try {
-      await ordersApi.updateStatus(order.id, 'return_processed', 'Colis non récupéré par le client')
+      await ordersApi.updateStatus(order.id, 'return_processed', 'Package not picked up by customer')
       await loadOrder()
     } catch { /* ignore */ }
     finally { setUpdating(false) }
@@ -101,19 +101,19 @@ export default function OrderDetail() {
       setEditing(false)
       await loadOrder()
     } catch (err: any) {
-      alert(err.message || 'Erreur')
+      alert(err.message || 'Error')
     } finally { setUpdating(false) }
   }
 
   const handleDelete = async () => {
     if (!order) return
-    if (!confirm(`Supprimer la commande ${order.tracking_code} ? Cette action est irréversible.`)) return
+    if (!confirm(`Delete order ${order.tracking_code} ? This action is irreversible.`)) return
     setDeleting(true)
     try {
       await ordersApi.deleteOrder(order.id)
       navigate('/merchant/orders')
     } catch (err: any) {
-      alert(err.message || 'Erreur')
+      alert(err.message || 'Error')
       setDeleting(false)
     }
   }
@@ -160,7 +160,7 @@ export default function OrderDetail() {
                 </span>
               </div>
               <div className="order-detail__info-item">
-                <span className="order-detail__info-label">Restant à payer</span>
+                <span className="order-detail__info-label">Remaining to pay</span>
                 <span className="order-detail__info-value">{order.remaining_amount.toLocaleString()} DA</span>
               </div>
             </div>
@@ -168,32 +168,32 @@ export default function OrderDetail() {
 
           {/* Customer Info */}
           <Card className="order-detail__section">
-            <div className="order-detail__section-title">Client</div>
+            <div className="order-detail__section-title">Customer</div>
             {order.customer_first_name ? (
               <div className="order-detail__info-grid">
                 <div className="order-detail__info-item">
-                  <span className="order-detail__info-label">Nom</span>
+                  <span className="order-detail__info-label">Name</span>
                   <span className="order-detail__info-value">{order.customer_first_name} {order.customer_last_name}</span>
                 </div>
                 <div className="order-detail__info-item">
-                  <span className="order-detail__info-label">Téléphone</span>
+                  <span className="order-detail__info-label">Phone</span>
                   <span className="order-detail__info-value">{order.customer_phone}</span>
                 </div>
                 <div className="order-detail__info-item">
-                  <span className="order-detail__info-label">Wilaya</span>
+                  <span className="order-detail__info-label">Province</span>
                   <span className="order-detail__info-value">{order.customer_wilaya}</span>
                 </div>
                 <div className="order-detail__info-item">
-                  <span className="order-detail__info-label">Commune</span>
+                  <span className="order-detail__info-label">Municipality</span>
                   <span className="order-detail__info-value">{order.customer_municipality}</span>
                 </div>
                 <div className="order-detail__info-item" style={{ gridColumn: '1 / -1' }}>
-                  <span className="order-detail__info-label">Adresse</span>
+                  <span className="order-detail__info-label">Address</span>
                   <span className="order-detail__info-value">{order.customer_address}</span>
                 </div>
                 {order.customer_remark && (
                   <div className="order-detail__info-item" style={{ gridColumn: '1 / -1' }}>
-                    <span className="order-detail__info-label">Remarque</span>
+                    <span className="order-detail__info-label">Note</span>
                     <span className="order-detail__info-value" style={{ color: 'var(--color-warning)' }}>
                       💬 {order.customer_remark}
                     </span>
@@ -203,11 +203,11 @@ export default function OrderDetail() {
             ) : (
               <div>
                 <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 12 }}>
-                  Le client n'a pas encore rempli ses informations.
+                  The customer has not yet provided their information.
                 </p>
                 <div style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 8 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6, textTransform: 'uppercase' }}>
-                    Lien client
+                    Customer Link
                   </div>
                   <div style={{ fontSize: 13, wordBreak: 'break-all', color: 'var(--color-primary)' }}>
                     {customerLink}
@@ -230,7 +230,7 @@ export default function OrderDetail() {
             <Card className="order-detail__section">
               <div className="order-detail__section-title">🧠 Analyse Safe Insights</div>
               <div style={{ padding: 16, background: 'var(--color-bg-secondary)', borderRadius: 10, marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 4 }}>CAUSE IDENTIFIÉE</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 4 }}>CAUSE IDENTIFIED</div>
                 <div style={{ fontSize: 15, fontWeight: 600 }}>{analysis.cause_label_fr}</div>
                 <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
                   Confiance: {(analysis.confidence * 100).toFixed(0)}%
@@ -253,7 +253,7 @@ export default function OrderDetail() {
             {order.status === 'confirmation' && order.customer_first_name && (
               <div style={{ padding: 16, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, marginBottom: 12 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#166534', marginBottom: 4 }}>
-                  📋 Commande remplie par le client
+                  📋 Order filled by customer
                 </div>
                 <div style={{ fontSize: 12, color: '#15803d', marginBottom: 14 }}>
                   {order.customer_first_name} {order.customer_last_name} — {order.customer_phone}
@@ -265,7 +265,7 @@ export default function OrderDetail() {
                     onClick={advanceStatus}
                     style={{ background: '#16a34a', borderColor: '#16a34a' }}
                   >
-                    ✅ Accepter
+                    ✅ Accept
                   </Button>
                   <Button
                     fullWidth
@@ -273,7 +273,7 @@ export default function OrderDetail() {
                     loading={deleting}
                     onClick={handleDelete}
                   >
-                    ❌ Refuser
+                    ❌ Refuse
                   </Button>
                 </div>
               </div>
@@ -293,13 +293,13 @@ export default function OrderDetail() {
                 style={{ marginBottom: 8 }}
                 onClick={() => ordersApi.openLabel(order.id).catch((err: any) => alert(err.message))}
               >
-                🖨️ Imprimer l'étiquette PDF
+                🖨️ Print PDF label
               </Button>
             )}
             {isEditable && (
               <div style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 8, marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: 6, textTransform: 'uppercase' }}>
-                  🔗 Lien client
+                  🔗 Customer Link
                 </div>
                 <div style={{ fontSize: 12, wordBreak: 'break-all', color: 'var(--color-primary)', marginBottom: 8 }}>
                   {customerLink}
@@ -308,38 +308,38 @@ export default function OrderDetail() {
                   variant="outline"
                   size="sm"
                   fullWidth
-                  onClick={() => { navigator.clipboard.writeText(customerLink); alert('Lien copié !') }}
+                  onClick={() => { navigator.clipboard.writeText(customerLink); alert('Link copied!') }}
                 >
-                  📋 Copier le lien
+                  📋 Copy link
                 </Button>
               </div>
             )}
             {isEditable && (
               <Button fullWidth variant="secondary" onClick={openEdit} style={{ marginBottom: 8 }}>
-                ✏️ Modifier la commande
+                ✏️ Edit order
               </Button>
             )}
             {order.status === 'delivery' && (
               <Button fullWidth variant="danger" loading={updating} onClick={markReturned} style={{ marginBottom: 8 }}>
-                Marquer comme retour
+                Mark as return
               </Button>
             )}
             {isEditable && !(order.status === 'confirmation' && order.customer_first_name) && (
               <Button fullWidth variant="danger" loading={deleting} onClick={handleDelete} style={{ marginBottom: 8 }}>
-                🗑️ Supprimer la commande
+                🗑️ Delete order
               </Button>
             )}
             {order.risk_score > 0 && (
               <div style={{ padding: 10, background: order.risk_score >= 60 ? '#fef2f2' : '#fef3cd', borderRadius: 8, fontSize: 12, marginTop: 8 }}>
                 <strong>Risk Flag:</strong> {order.risk_score.toFixed(0)}/100
-                {order.risk_score >= 60 && <span style={{ color: '#dc2626' }}> — Risque élevé</span>}
+                {order.risk_score >= 60 && <span style={{ color: '#dc2626' }}> — High risk</span>}
               </div>
             )}
           </Card>
 
           {/* Timeline */}
           <Card>
-            <div className="order-detail__section-title">Suivi</div>
+            <div className="order-detail__section-title">Tracking</div>
             <div className="timeline">
               {events.map((evt, i) => {
                 const isLast = i === events.length - 1
@@ -349,7 +349,7 @@ export default function OrderDetail() {
                   <div key={evt.id} className="timeline__item">
                     <div className={`timeline__dot ${isLast ? 'timeline__dot--active' : ''} ${isDone ? 'timeline__dot--success' : ''} ${isReturn ? 'timeline__dot--danger' : ''}`} />
                     <div className="timeline__time">
-                      {new Date(evt.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(evt.created_at).toLocaleString('en-US', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                     <div className="timeline__text">
                       <StatusBadge status={evt.status} />
@@ -366,17 +366,17 @@ export default function OrderDetail() {
       {editing && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#fff', borderRadius: 16, padding: 28, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Modifier la commande</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Edit order</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Input label="Nom du produit" value={editForm.product_name} onChange={e => setEditForm(f => ({ ...f, product_name: e.target.value }))} />
+              <Input label="Product name" value={editForm.product_name} onChange={e => setEditForm(f => ({ ...f, product_name: e.target.value }))} />
               <Input label="Description" value={editForm.product_description} onChange={e => setEditForm(f => ({ ...f, product_description: e.target.value }))} />
-              <Input label="Prix (DA)" type="number" value={editForm.product_price} onChange={e => setEditForm(f => ({ ...f, product_price: +e.target.value }))} />
-              <Input label="Frais de livraison (DA)" type="number" value={editForm.delivery_fee} onChange={e => setEditForm(f => ({ ...f, delivery_fee: +e.target.value }))} />
+              <Input label="Price (DA)" type="number" value={editForm.product_price} onChange={e => setEditForm(f => ({ ...f, product_price: +e.target.value }))} />
+              <Input label="Delivery fee (DA)" type="number" value={editForm.delivery_fee} onChange={e => setEditForm(f => ({ ...f, delivery_fee: +e.target.value }))} />
               <Input label="Safe Pay (%)" type="number" value={editForm.safe_pay_percentage} onChange={e => setEditForm(f => ({ ...f, safe_pay_percentage: +e.target.value }))} />
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <Button variant="outline" fullWidth onClick={() => setEditing(false)}>Annuler</Button>
-              <Button fullWidth loading={updating} onClick={handleSaveEdit}>Enregistrer</Button>
+              <Button variant="outline" fullWidth onClick={() => setEditing(false)}>Cancel</Button>
+              <Button fullWidth loading={updating} onClick={handleSaveEdit}>Save</Button>
             </div>
           </div>
         </div>
