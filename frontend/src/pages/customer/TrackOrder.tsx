@@ -1,8 +1,11 @@
+/**
+ * Safe Order — Customer order tracking page.
+ */
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { trackingApi, feedbackApi } from '../../api/endpoints'
-import { Card, StatusBadge, Button, Input, Spinner } from '../../components/ui'
-import LanguagePicker from '../../components/LanguagePicker'
+import { useT } from '../../i18n'
+import CustomerHeader from '../../components/CustomerHeader'
 
 const FEEDBACK_CRITERIA = [
   { value: 'conforming', label: '✅ Conforme' },
@@ -12,6 +15,20 @@ const FEEDBACK_CRITERIA = [
   { value: 'different_color', label: '🎨 Couleur différente' },
   { value: 'non_conforming', label: '⚠️ Non conforme' },
 ]
+
+const STATUS_TONE: Record<string, string> = {
+  confirmation: 'blue',
+  preparation: 'amber',
+  dispatch: 'slate',
+  delivery: 'blue',
+  delivered: 'green',
+  return_processed: 'red',
+}
+
+function StatusPill({ status }: { status: string }) {
+  const t = useT()
+  return <span className={`cs-badge ${STATUS_TONE[status] || 'slate'}`}>{t(`status.${status}`)}</span>
+}
 
 export default function TrackOrder() {
   const { code: urlCode } = useParams<{ code: string }>()
@@ -24,7 +41,6 @@ export default function TrackOrder() {
   const [remarkPhone, setRemarkPhone] = useState(localStorage.getItem('customer_phone') || '')
   const [remarkSent, setRemarkSent] = useState(false)
 
-  // Feedback state
   const [feedback, setFeedback] = useState<any | null>(null)
   const [fbRating, setFbRating] = useState(5)
   const [fbCriteria, setFbCriteria] = useState<string[]>([])
@@ -39,7 +55,6 @@ export default function TrackOrder() {
     try {
       const res = await trackingApi.track(c.toUpperCase())
       setData(res)
-      // Pre-load existing feedback if delivered
       if (res?.order?.status === 'delivered' && res.order.id) {
         try {
           const fb = await feedbackApi.getByOrder(res.order.id)
@@ -77,159 +92,162 @@ export default function TrackOrder() {
   }
 
   const order = data?.order
-  const events = data?.events || []
+  const events: any[] = data?.events || []
 
   return (
-    <div className="auth-page" style={{ alignItems: 'flex-start', paddingTop: 40 }}>
-      <div style={{ position: 'absolute', top: 20, insetInlineEnd: 20 }}>
-        <LanguagePicker size="sm" />
-      </div>
-      <div style={{ width: '100%', maxWidth: 580 }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 44, height: 44, background: '#0080ff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 22 }}>🛡</div>
-            <span style={{ fontSize: 22, fontWeight: 700, color: '#0D3B66' }}>Safe Track</span>
-          </div>
-          <p style={{ fontSize: 14, color: '#64748b' }}>Suivez votre commande en temps réel</p>
-          <button
-            type="button"
-            onClick={() => navigate('/customer')}
-            style={{ marginTop: 8, background: 'transparent', border: 'none', color: '#0080ff', fontSize: 13, cursor: 'pointer' }}
-          >
-            ← Mon espace client
+    <div className="cs-page">
+      <CustomerHeader
+        actions={
+          <button className="cs-btn cs-btn--ghost cs-btn--sm" onClick={() => navigate('/customer')}>
+            ← Mon espace
           </button>
+        }
+      />
+      <div className="cs-shell mid">
+        <div className="cs-intro">
+          <div className="cs-eyebrow">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+            </svg>
+            Suivi en temps réel
+          </div>
+          <h1 className="cs-h1">Suivre ma commande</h1>
+          <p className="cs-sub">Entrez votre code de suivi pour voir l'avancement de votre colis.</p>
         </div>
 
-        <Card padding="md" style={{ marginBottom: 16 }}>
+        <div className="cs-card cs-card-pad">
           <form
+            className="cs-inline-form"
             onSubmit={e => { e.preventDefault(); if (code.trim()) doTrack(code.trim()) }}
-            style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}
           >
-            <Input
-              label="Code de suivi"
-              placeholder="SO-A1B2C3"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              style={{ flex: 1, marginBottom: 0 }}
-            />
-            <Button type="submit" loading={loading}>Suivre</Button>
+            <div className="cs-field">
+              <label>Code de suivi</label>
+              <input
+                className="cs-input"
+                placeholder="SO-A1B2C3"
+                value={code}
+                onChange={e => setCode(e.target.value)}
+              />
+            </div>
+            <button type="submit" className="cs-btn cs-btn--primary" disabled={loading}>
+              {loading ? <span className="cs-btn-spinner" /> : 'Suivre'}
+            </button>
           </form>
-          {error && <p style={{ color: '#ef4444', fontSize: 13, marginTop: 8 }}>{error}</p>}
-        </Card>
+          {error && <div className="cs-error" style={{ marginTop: 12 }}>{error}</div>}
+        </div>
 
         {order && (
           <>
-            <Card padding="md" style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="cs-card cs-card-pad">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>Commande</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0080ff' }}>{order.tracking_code}</div>
+                  <div className="cs-card-label" style={{ margin: '0 0 4px' }}>Commande</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-blue-600)' }}>{order.tracking_code}</div>
                 </div>
-                <StatusBadge status={order.status} />
+                <StatusPill status={order.status} />
               </div>
-              <div style={{ marginTop: 16, padding: 14, background: '#f8fafc', borderRadius: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{order.product_name}</div>
-                <div style={{ display: 'flex', gap: 20, marginTop: 8, fontSize: 13, color: '#64748b' }}>
-                  <span>Prix: <strong>{order.product_price.toLocaleString()} DA</strong></span>
+              <div className="cs-product">
+                <div className="pname">{order.product_name}</div>
+                <div className="cs-price-row">
+                  <div className="cs-price">
+                    <div className="k">Prix</div>
+                    <div className="v">{order.product_price.toLocaleString()} DA</div>
+                  </div>
                   {order.safe_pay_amount > 0 && (
-                    <span>Acompte: <strong style={{ color: '#0D6E3F' }}>{order.safe_pay_amount.toLocaleString()} DA</strong></span>
+                    <div className="cs-price green">
+                      <div className="k">Acompte Safe Pay</div>
+                      <div className="v">{order.safe_pay_amount.toLocaleString()} DA</div>
+                    </div>
                   )}
                 </div>
               </div>
               {data.estimated_delivery && (
-                <div style={{ marginTop: 12, padding: 10, background: '#f0f7ff', borderRadius: 8, textAlign: 'center', fontSize: 13, color: '#0080ff', fontWeight: 500 }}>
-                  ⏰ Livraison estimée: {data.estimated_delivery}
+                <div className="cs-note" style={{ marginTop: 12 }}>
+                  ⏰ Livraison estimée : {data.estimated_delivery}
                 </div>
               )}
-            </Card>
+            </div>
 
-            <Card padding="md" style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 16 }}>Historique</div>
-              <div className="timeline">
-                {events.map((evt: any, i: number) => (
-                  <div key={evt.id} className="timeline__item">
-                    <div className={`timeline__dot ${i === events.length - 1 ? 'timeline__dot--active' : ''} ${evt.status === 'delivered' ? 'timeline__dot--success' : ''} ${evt.status === 'return_processed' ? 'timeline__dot--danger' : ''}`} />
-                    <div className="timeline__time">{new Date(evt.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
-                    <div className="timeline__text"><StatusBadge status={evt.status} /></div>
-                    {evt.note && <div className="timeline__note">{evt.note}</div>}
+            <div className="cs-card cs-card-pad">
+              <div className="cs-card-label">Historique</div>
+              <div className="cs-timeline">
+                {events.map((evt, i) => (
+                  <div key={evt.id} className="cs-tl-item">
+                    <div className={`cs-tl-dot ${i === events.length - 1 ? 'active' : ''} ${evt.status === 'delivered' ? 'success' : ''} ${evt.status === 'return_processed' ? 'danger' : ''}`} />
+                    <div className="cs-tl-time">
+                      {new Date(evt.created_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <StatusPill status={evt.status} />
+                    {evt.note && <div className="cs-tl-note">{evt.note}</div>}
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
 
             {order.status === 'delivered' && (
-              <Card padding="md" style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12 }}>
-                  ⭐ Votre avis
-                </div>
+              <div className="cs-card cs-card-pad">
+                <div className="cs-card-label">⭐ Votre avis</div>
                 {fbDone || feedback ? (
-                  <div style={{ padding: 12, background: '#e6f5ed', borderRadius: 8, color: '#0D6E3F', fontSize: 13 }}>
+                  <div className="cs-success">
                     ✓ Merci ! Votre avis ({feedback?.rating ?? fbRating}/5) a été enregistré.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                  <div className="cs-form">
+                    <div className="cs-stars">
                       {[1, 2, 3, 4, 5].map(n => (
                         <button
                           key={n}
                           type="button"
+                          className={`cs-star ${fbRating >= n ? 'on' : ''}`}
                           onClick={() => setFbRating(n)}
-                          style={{
-                            flex: 1, padding: 10, fontSize: 18, borderRadius: 8,
-                            border: `2px solid ${fbRating >= n ? '#F0AE1A' : '#e2e8f0'}`,
-                            background: fbRating >= n ? '#fff8e6' : '#fff',
-                            cursor: 'pointer',
-                          }}
                         >
                           {fbRating >= n ? '⭐' : '☆'}
                         </button>
                       ))}
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <div className="cs-chips">
                       {FEEDBACK_CRITERIA.map(c => (
                         <button
                           key={c.value}
                           type="button"
+                          className={`cs-chip ${fbCriteria.includes(c.value) ? 'on' : ''}`}
                           onClick={() => toggleCriteria(c.value)}
-                          style={{
-                            padding: '6px 12px', borderRadius: 16, fontSize: 12, fontWeight: 500,
-                            border: `1.5px solid ${fbCriteria.includes(c.value) ? '#0080ff' : '#e2e8f0'}`,
-                            background: fbCriteria.includes(c.value) ? '#e8f3ff' : '#fff',
-                            color: fbCriteria.includes(c.value) ? '#0080ff' : '#64748b',
-                            cursor: 'pointer',
-                          }}
                         >
                           {c.label}
                         </button>
                       ))}
                     </div>
                     <textarea
-                      className="form-field__input"
+                      className="cs-textarea"
                       rows={2}
                       placeholder="Commentaire (optionnel)"
                       value={fbComment}
                       onChange={e => setFbComment(e.target.value)}
-                      style={{ resize: 'vertical' }}
                     />
-                    <Button onClick={submitFeedback} loading={fbSubmitting}>
-                      Envoyer mon avis
-                    </Button>
+                    <button className="cs-btn cs-btn--primary cs-btn--block" onClick={submitFeedback} disabled={fbSubmitting}>
+                      {fbSubmitting ? <span className="cs-btn-spinner" /> : 'Envoyer mon avis'}
+                    </button>
                   </div>
                 )}
-              </Card>
+              </div>
             )}
 
-            <Card padding="md">
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12 }}>💬 Remarque</div>
+            <div className="cs-card cs-card-pad">
+              <div className="cs-card-label">💬 Ajouter une remarque</div>
               {remarkSent ? (
-                <div style={{ padding: 12, background: '#e6f5ed', borderRadius: 8, color: '#0D6E3F', fontSize: 13, textAlign: 'center' }}>✓ Remarque envoyée</div>
+                <div className="cs-success">✓ Remarque envoyée</div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <Input placeholder="Votre téléphone" value={remarkPhone} onChange={e => setRemarkPhone(e.target.value)} />
-                  <Input placeholder="Ex: Disponible après 17h..." value={remark} onChange={e => setRemark(e.target.value)} />
-                  <Button
-                    variant="outline"
-                    size="sm"
+                <div className="cs-form">
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>Votre téléphone</label>
+                    <input className="cs-input" placeholder="0551234567" value={remarkPhone} onChange={e => setRemarkPhone(e.target.value)} />
+                  </div>
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>Remarque</label>
+                    <input className="cs-input" placeholder="Ex : disponible après 17h…" value={remark} onChange={e => setRemark(e.target.value)} />
+                  </div>
+                  <button
+                    className="cs-btn cs-btn--outline cs-btn--block"
                     onClick={async () => {
                       if (!remark || !remarkPhone) return
                       try {
@@ -241,10 +259,10 @@ export default function TrackOrder() {
                     }}
                   >
                     Envoyer
-                  </Button>
+                  </button>
                 </div>
               )}
-            </Card>
+            </div>
           </>
         )}
       </div>

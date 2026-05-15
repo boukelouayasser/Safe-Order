@@ -7,6 +7,8 @@ import App from './App'
 import './styles/global.css'
 import './styles/components.css'
 import './styles/layout.css'
+import './styles/merchant.css'
+import './styles/customer.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -1,174 +1,171 @@
 /**
  * Safe Order — Merchant Dashboard (FR-04, FR-07)
- * 6-category pipeline + key stats overview.
+ * KPI overview + 6-stage pipeline + pending-orders table.
  */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ordersApi, PipelineCounts, OrderSummary } from '../../api/orders'
+import { ordersApi, PipelineCounts, OrderSummary, OrderBadge } from '../../api/orders'
 import { statsApi } from '../../api/endpoints'
 import { useAuth } from '../../context/AuthContext'
-import { Card, OrderBadge, StatusBadge, StatCard, Spinner, EmptyState } from '../../components/ui'
 
 const PIPELINE_STAGES = [
-  { key: 'confirmation', label: 'Confirmation', color: '#0080ff' },
-  { key: 'preparation', label: 'Préparation', color: '#f59e0b' },
-  { key: 'dispatch', label: 'Expédition', color: '#8b5cf6' },
-  { key: 'delivery', label: 'Livraison', color: '#06b6d4' },
-  { key: 'delivered', label: 'Livré', color: '#10b981' },
-  { key: 'return_processed', label: 'Retour', color: '#ef4444' },
-]
+  { key: 'confirmation', label: 'Confirmation', cls: 's-conf' },
+  { key: 'preparation', label: 'Préparation', cls: 's-prep' },
+  { key: 'dispatch', label: 'Expédition', cls: 's-ship' },
+  { key: 'delivery', label: 'Livraison', cls: 's-deliv' },
+  { key: 'delivered', label: 'Livré', cls: 's-done' },
+  { key: 'return_processed', label: 'Retour', cls: 's-return' },
+] as const
+
+const STAGE_ICON: Record<string, JSX.Element> = {
+  confirmation: <svg className="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>,
+  preparation: <svg className="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>,
+  dispatch: <svg className="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7h13v10H3zM16 10h4l3 3v4h-7" /><circle cx="6.5" cy="17.5" r="2" /><circle cx="18.5" cy="17.5" r="2" /></svg>,
+  delivery: <svg className="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3" /><path d="M12 22s-8-7-8-13a8 8 0 0 1 16 0c0 6-8 13-8 13z" /></svg>,
+  delivered: <svg className="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>,
+  return_processed: <svg className="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>,
+}
+
+const BADGE_META: Record<OrderBadge, { cls: string; label: string }> = {
+  safe_pay: { cls: 'md-b-safepay', label: 'Safe Pay' },
+  new: { cls: 'md-b-call', label: 'New (call)' },
+  loyal: { cls: 'md-b-loyal', label: 'Loyal' },
+  risk: { cls: 'md-b-risk', label: 'Risk' },
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { user, merchantProfile } = useAuth()
+  const { merchantProfile } = useAuth()
   const [counts, setCounts] = useState<PipelineCounts | null>(null)
-  const [activeStage, setActiveStage] = useState('confirmation')
+  const [activeStage, setActiveStage] = useState<string>('confirmation')
   const [orders, setOrders] = useState<OrderSummary[]>([])
   const [stats, setStats] = useState<any>(null)
-  const [alerts, setAlerts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadData()
+    Promise.all([
+      ordersApi.getPipelineCounts().catch(() => null),
+      statsApi.getDashboard().catch(() => null),
+    ])
+      .then(([c, s]) => { setCounts(c); setStats(s) })
+      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
-    loadOrders(activeStage)
+    ordersApi.getByStatus(activeStage).then(setOrders).catch(() => setOrders([]))
   }, [activeStage])
 
-  const loadData = async () => {
-    try {
-      const [c, s, a] = await Promise.all([
-        ordersApi.getPipelineCounts(),
-        statsApi.getDashboard().catch(() => null),
-        ordersApi.getDMinus1Alerts().catch(() => ({ alerts: [] })),
-      ])
-      setCounts(c)
-      setStats(s)
-      setAlerts(a.alerts || [])
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false)
-    }
+  if (loading) {
+    return <div className="md-loading"><div className="md-spinner" /></div>
   }
-
-  const loadOrders = async (stage: string) => {
-    try {
-      const data = await ordersApi.getByStatus(stage)
-      setOrders(data)
-    } catch {
-      setOrders([])
-    }
-  }
-
-  if (loading) return <Spinner />
 
   const overview = stats?.overview
+  const totalOrders = overview?.total_orders ?? merchantProfile?.total_orders ?? 0
+  const deliveryRate = overview?.delivery_rate ?? 0
+  const returnRate = overview?.return_rate ?? 0
+  const returnChange = overview?.return_rate_change
+  const avgRating = overview?.avg_rating ?? 0
+  const activeLabel = PIPELINE_STAGES.find(s => s.key === activeStage)?.label ?? ''
 
   return (
-    <div>
-      {/* Stats Row */}
-      <div className="grid grid--4" style={{ marginBottom: 28 }}>
-        <StatCard
-          label="Total commandes"
-          value={overview?.total_orders ?? merchantProfile?.total_orders ?? 0}
-          icon={<span style={{ fontSize: 20 }}>📦</span>}
-        />
-        <StatCard
-          label="Taux de livraison"
-          value={`${overview?.delivery_rate ?? 0}%`}
-          icon={<span style={{ fontSize: 20 }}>✅</span>}
-          color="var(--color-green)"
-        />
-        <StatCard
-          label="Taux de retour"
-          value={`${overview?.return_rate ?? 0}%`}
-          change={overview?.return_rate_change}
-          icon={<span style={{ fontSize: 20 }}>↩️</span>}
-          color="var(--color-danger)"
-        />
-        <StatCard
-          label="Note moyenne"
-          value={`${overview?.avg_rating ?? 0}/5`}
-          icon={<span style={{ fontSize: 20 }}>⭐</span>}
-          color="var(--color-gold)"
-        />
+    <>
+      {/* KPI */}
+      <div className="md-kpi-grid">
+        <div className="md-card md-kpi">
+          <div className="md-kpi-icon blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+          </div>
+          <div>
+            <div className="md-kpi-value">{totalOrders}</div>
+            <div className="md-kpi-label">Total orders</div>
+          </div>
+        </div>
+
+        <div className="md-card md-kpi">
+          <div className="md-kpi-icon green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </div>
+          <div>
+            <div className="md-kpi-value">{deliveryRate}%</div>
+            <div className="md-kpi-label">Delivery rate</div>
+          </div>
+        </div>
+
+        <div className="md-card md-kpi">
+          <div className="md-kpi-icon red">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" /></svg>
+          </div>
+          <div>
+            <div className="md-kpi-value">{returnRate}%</div>
+            <div className="md-kpi-label">Return rate</div>
+            {returnChange != null && returnChange !== 0 && (
+              <div className={`md-kpi-delta ${returnChange > 0 ? 'down' : ''}`}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points={returnChange > 0 ? '6 9 12 15 18 9' : '18 15 12 9 6 15'} />
+                </svg>
+                {returnChange > 0 ? '+' : ''}{returnChange}% MoM
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="md-card md-kpi">
+          <div className="md-kpi-icon amber">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" stroke="none"><path d="M12 2l2.95 6.91L22 9.27l-5.18 5.05L18.18 22 12 18.27 5.82 22l1.36-7.68L2 9.27l7.05-.36L12 2z" /></svg>
+          </div>
+          <div>
+            <div className="md-kpi-value">
+              {avgRating}<span style={{ color: 'var(--md-ink-3)', fontWeight: 500 }}>/5</span>
+            </div>
+            <div className="md-kpi-label">Average rating</div>
+          </div>
+        </div>
       </div>
 
-      {/* D-1 alerts */}
-      {alerts.length > 0 && (
-        <Card padding="md" style={{ marginBottom: 20, borderInlineStart: '4px solid #f59e0b' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 18 }}>📅</span>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>
-              Alertes livraison ({alerts.length})
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {alerts.slice(0, 5).map(a => (
-              <div
-                key={a.order_id}
-                style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: 10, borderRadius: 8,
-                  background: a.is_d_minus_1 ? '#fef3cd' : '#f8fafc',
-                  cursor: 'pointer',
-                }}
-                onClick={() => navigate(`/merchant/orders/${a.order_id}`)}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#0080ff' }}>{a.tracking_code}</div>
-                  <div style={{ fontSize: 12, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {a.customer_name} — {a.product_name}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic', marginTop: 2 }}>
-                    « {a.remark} »
-                  </div>
-                </div>
-                <div style={{ textAlign: 'end', flexShrink: 0, marginInlineStart: 12 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: a.is_d_minus_1 ? '#92400e' : '#0f172a' }}>
-                    {new Date(a.delivery_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                  </div>
-                  <div style={{ fontSize: 10, color: a.is_d_minus_1 ? '#92400e' : '#64748b' }}>
-                    {a.is_d_minus_1 ? '⚠ D-1' : `J+${a.days_until}`}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
       {/* Pipeline */}
-      <div className="pipeline">
+      <div className="md-pipeline">
         {PIPELINE_STAGES.map(stage => {
           const count = counts?.[stage.key as keyof PipelineCounts] ?? 0
           return (
             <div
               key={stage.key}
-              className={`pipeline__card ${activeStage === stage.key ? 'pipeline__card--active' : ''}`}
+              className={`md-pipe ${stage.cls} ${activeStage === stage.key ? 'active' : ''}`}
               onClick={() => setActiveStage(stage.key)}
             >
-              <div className="pipeline__count" style={{ color: stage.color }}>
-                {count}
-              </div>
-              <div className="pipeline__label">{stage.label}</div>
+              {STAGE_ICON[stage.key]}
+              <div className="n">{count}</div>
+              <div className="l">{stage.label}</div>
             </div>
           )
         })}
       </div>
 
-      {/* Orders List */}
-      <Card padding="sm">
+      {/* Orders table */}
+      <div className="md-card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 0' }}>
+          <div>
+            <div className="md-section-label" style={{ margin: '0 0 4px' }}>{activeLabel}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>
+              {orders.length} order{orders.length === 1 ? '' : 's'}
+            </div>
+          </div>
+          <button className="md-toolbtn primary" onClick={() => navigate('/merchant/create-order')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+            New order
+          </button>
+        </div>
+
         {orders.length === 0 ? (
-          <EmptyState
-            title="Aucune commande"
-            description={`Aucune commande en "${PIPELINE_STAGES.find(s => s.key === activeStage)?.label}"`}
-          />
+          <div className="md-empty">
+            <div className="ic">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+            </div>
+            <h3>No orders</h3>
+            <p>No order is currently in &ldquo;{activeLabel}&rdquo;.</p>
+          </div>
         ) : (
-          <div className="table-container" style={{ border: 'none' }}>
-            <table className="table">
+          <div className="md-table-wrap" style={{ marginTop: 16 }}>
+            <table className="md-orders">
               <thead>
                 <tr>
                   <th>Code</th>
@@ -182,42 +179,34 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map(order => (
-                  <tr
-                    key={order.id}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`/merchant/orders/${order.id}`)}
-                  >
-                    <td>
-                      <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: 13 }}>
-                        {order.tracking_code}
-                      </span>
-                    </td>
-                    <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {order.product_name}
-                    </td>
-                    <td>
-                      {order.customer_first_name
-                        ? `${order.customer_first_name} ${order.customer_last_name || ''}`
-                        : <span style={{ color: 'var(--color-text-muted)' }}>—</span>
-                      }
-                    </td>
-                    <td style={{ fontSize: 13 }}>{order.customer_wilaya || '—'}</td>
-                    <td style={{ fontWeight: 600 }}>{order.product_price.toLocaleString()} DA</td>
-                    <td style={{ fontWeight: 500, color: order.safe_pay_amount > 0 ? 'var(--color-green)' : 'var(--color-text-muted)' }}>
-                      {order.safe_pay_amount > 0 ? `${order.safe_pay_amount.toLocaleString()} DA` : '—'}
-                    </td>
-                    <td><OrderBadge badge={order.badge} /></td>
-                    <td style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-                      {new Date(order.created_at).toLocaleDateString('fr-FR')}
-                    </td>
-                  </tr>
-                ))}
+                {orders.map(order => {
+                  const badge = order.badge ? BADGE_META[order.badge] : null
+                  return (
+                    <tr key={order.id} onClick={() => navigate(`/merchant/orders/${order.id}`)}>
+                      <td><span className="md-code-link">{order.tracking_code}</span></td>
+                      <td className="md-prod-cell">{order.product_name}</td>
+                      <td>
+                        {order.customer_first_name
+                          ? `${order.customer_first_name} ${order.customer_last_name || ''}`
+                          : <span className="md-mute">—</span>}
+                      </td>
+                      <td>{order.customer_wilaya || <span className="md-mute">—</span>}</td>
+                      <td className="md-num">{order.product_price.toLocaleString()} DA</td>
+                      <td>
+                        {order.safe_pay_amount > 0
+                          ? <span className="md-num-g">{order.safe_pay_amount.toLocaleString()} DA</span>
+                          : <span className="md-mute">—</span>}
+                      </td>
+                      <td>{badge ? <span className={`md-badge ${badge.cls}`}>{badge.label}</span> : <span className="md-mute">—</span>}</td>
+                      <td>{new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
-      </Card>
-    </div>
+      </div>
+    </>
   )
 }

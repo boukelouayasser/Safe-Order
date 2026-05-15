@@ -7,10 +7,14 @@ import { useNavigate } from 'react-router-dom'
 import { trackingApi, paymentsApi } from '../../api/endpoints'
 import { useAuth } from '../../context/AuthContext'
 import { useT } from '../../i18n'
-import LanguagePicker from '../../components/LanguagePicker'
-import { Card, Button, Input, StatusBadge, Spinner, EmptyState } from '../../components/ui'
+import CustomerHeader from '../../components/CustomerHeader'
 
 type Period = 'weekly' | 'monthly'
+
+const STATUS_TONE: Record<string, string> = {
+  confirmation: 'blue', preparation: 'amber', dispatch: 'slate',
+  delivery: 'blue', delivered: 'green', return_processed: 'red',
+}
 
 export default function CustomerHome() {
   const navigate = useNavigate()
@@ -31,9 +35,7 @@ export default function CustomerHome() {
       navigate('/customer/login', { replace: true })
       return
     }
-    if (user.role !== 'customer') {
-      navigate('/', { replace: true })
-    }
+    if (user.role !== 'customer') navigate('/', { replace: true })
   }, [isLoading, isAuthenticated, user, navigate])
 
   useEffect(() => {
@@ -61,85 +63,80 @@ export default function CustomerHome() {
     navigate('/customer/login', { replace: true })
   }
 
-  if (isLoading || !user) return <Spinner />
+  if (isLoading || !user) {
+    return <div className="cs-page"><div className="cs-loading"><div className="cs-spinner" /></div></div>
+  }
 
   return (
-    <div className="auth-page" style={{ alignItems: 'flex-start', paddingTop: 60 }}>
-      <div style={{ width: '100%', maxWidth: 720 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 44, height: 44, background: '#0080ff', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 22 }}>🛒</div>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#0D3B66', lineHeight: 1.1 }}>
-                {t('customer.home.greeting')}, {user.first_name}
-              </div>
-              <div style={{ fontSize: 12, color: '#64748b' }}>
-                {user.phone} — Trust Score {user.trust_score?.toFixed(0) ?? '—'}/100
-              </div>
-            </div>
+    <div className="cs-page">
+      <CustomerHeader
+        actions={
+          <button className="cs-btn cs-btn--ghost cs-btn--sm" onClick={handleLogout}>
+            {t('common.logout')}
+          </button>
+        }
+      />
+      <div className="cs-shell">
+        <div className="cs-intro">
+          <div className="cs-eyebrow">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            {t('landing.role.customer')}
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <LanguagePicker size="sm" />
-            <Button variant="ghost" size="sm" onClick={handleLogout}>{t('common.logout')}</Button>
-          </div>
+          <h1 className="cs-h1">{t('customer.home.greeting')}, {user.first_name}</h1>
+          <p className="cs-sub">
+            {user.phone} · Trust Score {user.trust_score?.toFixed(0) ?? '—'}/100
+          </p>
         </div>
 
         {wallet && (
-          <Card padding="md" style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 10 }}>
-              💰 {t('customer.home.wallet')}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: '#64748b' }}>{t('customer.home.active_deposits')}</div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{(wallet.active_deposits || 0).toLocaleString()} DA</div>
+          <div className="cs-card cs-card-pad">
+            <div className="cs-card-label">💰 {t('customer.home.wallet')}</div>
+            <div className="cs-tiles">
+              <div className="cs-tile">
+                <div className="v">{(wallet.active_deposits || 0).toLocaleString()} DA</div>
+                <div className="l">{t('customer.home.active_deposits')}</div>
               </div>
-              <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: '#64748b' }}>{t('customer.home.total_paid')}</div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{(wallet.total_deposits || 0).toLocaleString()} DA</div>
+              <div className="cs-tile">
+                <div className="v">{(wallet.total_deposits || 0).toLocaleString()} DA</div>
+                <div className="l">{t('customer.home.total_paid')}</div>
               </div>
-              <div style={{ padding: 12, background: '#f8fafc', borderRadius: 8, textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: '#64748b' }}>{t('customer.home.orders_count')}</div>
-                <div style={{ fontWeight: 700, fontSize: 16 }}>{wallet.order_count || 0}</div>
+              <div className="cs-tile">
+                <div className="v">{wallet.order_count || 0}</div>
+                <div className="l">{t('customer.home.orders_count')}</div>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
-        <Card padding="md" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 10 }}>
-            {t('customer.home.track_by_code')}
-          </div>
-          <form onSubmit={goTrackByCode} style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-            <Input
-              label={t('customer.home.tracking_code')}
-              placeholder="SO-A1B2C3"
-              value={trackCode}
-              onChange={e => setTrackCode(e.target.value)}
-              style={{ flex: 1, marginBottom: 0 }}
-            />
-            <Button type="submit" variant="outline">{t('customer.home.track')}</Button>
-          </form>
-        </Card>
-
-        {/* Wallet history (FR-10): weekly / monthly toggle */}
-        <Card padding="md" style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>
-              📅 Historique financier
+        <div className="cs-card cs-card-pad">
+          <div className="cs-card-label">{t('customer.home.track_by_code')}</div>
+          <form className="cs-inline-form" onSubmit={goTrackByCode}>
+            <div className="cs-field">
+              <label>{t('customer.home.tracking_code')}</label>
+              <input
+                className="cs-input"
+                placeholder="SO-A1B2C3"
+                value={trackCode}
+                onChange={e => setTrackCode(e.target.value)}
+              />
             </div>
-            <div style={{ display: 'inline-flex', padding: 3, background: '#f1f5f9', borderRadius: 999 }}>
+            <button type="submit" className="cs-btn cs-btn--outline">{t('customer.home.track')}</button>
+          </form>
+        </div>
+
+        <div className="cs-card cs-card-pad">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div className="cs-card-label" style={{ margin: 0 }}>📅 Historique financier</div>
+            <div className="cs-seg">
               {(['weekly', 'monthly'] as Period[]).map(p => (
                 <button
                   key={p}
                   type="button"
+                  className={period === p ? 'active' : ''}
                   onClick={() => setPeriod(p)}
-                  style={{
-                    padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 999,
-                    border: 'none', cursor: 'pointer',
-                    background: period === p ? '#0080ff' : 'transparent',
-                    color: period === p ? '#fff' : '#475569',
-                  }}
                 >
                   {p === 'weekly' ? t('customer.home.history.weekly') : t('customer.home.history.monthly')}
                 </button>
@@ -148,77 +145,67 @@ export default function CustomerHome() {
           </div>
 
           {!history || history.length === 0 ? (
-            <p style={{ fontSize: 13, color: '#64748b', textAlign: 'center', padding: 20 }}>—</p>
+            <p style={{ fontSize: 13, color: 'var(--cs-ink-3)', textAlign: 'center', padding: 16, margin: 0 }}>—</p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {history.slice(0, 6).map(b => (
-                <div key={b.key} style={{ padding: 14, background: '#f8fafc', borderRadius: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, textTransform: 'capitalize' }}>{b.label}</div>
-                    <div style={{ fontSize: 11, color: '#64748b' }}>
-                      {b.order_count} {t('customer.home.orders_count').toLowerCase()} ·
-                      {' '}{b.delivered} ✅ · {b.returned} ↩
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, fontSize: 12 }}>
-                    <div>
-                      <div style={{ color: '#94a3b8', fontSize: 10 }}>Total</div>
-                      <div style={{ fontWeight: 700 }}>{b.total_price.toLocaleString()} DA</div>
-                    </div>
-                    <div>
-                      <div style={{ color: '#0D6E3F', fontSize: 10 }}>{t('customer.home.history.deposit')}</div>
-                      <div style={{ fontWeight: 700, color: '#0D6E3F' }}>{b.total_deposit.toLocaleString()} DA</div>
-                    </div>
-                    <div>
-                      <div style={{ color: '#94a3b8', fontSize: 10 }}>{t('customer.home.history.remaining')}</div>
-                      <div style={{ fontWeight: 700 }}>{b.total_remaining.toLocaleString()} DA</div>
-                    </div>
+            history.slice(0, 6).map(b => (
+              <div key={b.key} className="cs-bucket">
+                <div className="cs-bucket-head">
+                  <div className="name">{b.label}</div>
+                  <div className="meta">
+                    {b.order_count} {t('customer.home.orders_count').toLowerCase()} · {b.delivered} ✅ · {b.returned} ↩
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="cs-tiles">
+                  <div className="cs-tile">
+                    <div className="v">{b.total_price.toLocaleString()} DA</div>
+                    <div className="l">Total</div>
+                  </div>
+                  <div className="cs-tile">
+                    <div className="v green">{b.total_deposit.toLocaleString()} DA</div>
+                    <div className="l">{t('customer.home.history.deposit')}</div>
+                  </div>
+                  <div className="cs-tile">
+                    <div className="v">{b.total_remaining.toLocaleString()} DA</div>
+                    <div className="l">{t('customer.home.history.remaining')}</div>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
-        </Card>
+        </div>
 
-        <Card padding="md">
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12 }}>
-            {t('customer.home.my_orders')}
-          </div>
+        <div className="cs-card cs-card-pad">
+          <div className="cs-card-label">{t('customer.home.my_orders')}</div>
           {loading ? (
-            <Spinner />
+            <div className="cs-loading" style={{ minHeight: 120 }}><div className="cs-spinner" /></div>
           ) : error ? (
-            <p style={{ color: '#ef4444', fontSize: 13 }}>{error}</p>
+            <div className="cs-error">{error}</div>
           ) : !orders || orders.length === 0 ? (
-            <EmptyState
-              title={t('customer.home.no_orders.title')}
-              description={t('customer.home.no_orders.desc')}
-            />
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {orders.map((o: any) => (
-                <div
-                  key={o.id}
-                  style={{ padding: 14, background: '#f8fafc', borderRadius: 10, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                  onClick={() => navigate(`/track/${o.tracking_code}`)}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontWeight: 700, color: '#0080ff', fontSize: 13 }}>{o.tracking_code}</span>
-                      <StatusBadge status={o.status} />
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {o.product_name}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
-                      {new Date(o.created_at).toLocaleDateString()} · {o.product_price?.toLocaleString()} DA
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 18, color: '#94a3b8' }}>›</span>
-                </div>
-              ))}
+            <div className="cs-empty">
+              <div className="ic">📦</div>
+              <h3>{t('customer.home.no_orders.title')}</h3>
+              <p>{t('customer.home.no_orders.desc')}</p>
             </div>
+          ) : (
+            orders.map((o: any) => (
+              <div key={o.id} className="cs-order" onClick={() => navigate(`/track/${o.tracking_code}`)}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="cs-order-code">{o.tracking_code}</span>
+                    <span className={`cs-badge ${STATUS_TONE[o.status] || 'slate'}`}>{t(`status.${o.status}`)}</span>
+                  </div>
+                  <div className="cs-order-name">{o.product_name}</div>
+                  <div className="cs-order-meta">
+                    {new Date(o.created_at).toLocaleDateString()} · {o.product_price?.toLocaleString()} DA
+                  </div>
+                </div>
+                <svg className="cs-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </div>
+            ))
           )}
-        </Card>
+        </div>
       </div>
     </div>
   )

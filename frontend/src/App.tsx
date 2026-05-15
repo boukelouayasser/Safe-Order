@@ -2,9 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { Spinner } from './components/ui'
 
-import Landing from './pages/Landing'
 import MerchantLogin from './pages/merchant/Login'
-import MerchantRegister from './pages/merchant/Register'
+import Register from './pages/merchant/Register'
 import SafeStandards from './pages/merchant/SafeStandards'
 import Dashboard from './pages/merchant/Dashboard'
 import Orders from './pages/merchant/Orders'
@@ -31,11 +30,11 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: 
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<Register />} />
 
       {/* Merchant Auth */}
       <Route path="/merchant/login" element={<MerchantLogin />} />
-      <Route path="/merchant/register" element={<MerchantRegister />} />
+      <Route path="/merchant/register" element={<Register />} />
       <Route path="/merchant/safe-standards" element={<ProtectedRoute role="merchant"><SafeStandards /></ProtectedRoute>} />
 
       {/* Merchant Dashboard */}
@@ -56,7 +55,7 @@ export default function App() {
       <Route path="/track" element={<TrackOrder />} />
       <Route path="/customer" element={<CustomerHome />} />
       <Route path="/customer/login" element={<CustomerLogin />} />
-      <Route path="/customer/register" element={<CustomerLogin />} />
+      <Route path="/customer/register" element={<Register />} />
 
       {/* Admin */}
       <Route path="/admin" element={<AdminDashboard />} />

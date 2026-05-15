@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Yasser/.claude/projects/C--Users-Yasser-Desktop-Documents-GitHub-Safe-Order/8eac85be-4818-4bba-93a2-b82b3574d162/tool-results/**)",
+      "Read(//c/Users/Yasser/.claude/projects/C--Users-Yasser-Desktop-Documents-GitHub-Safe-Order/8eac85be-4818-4bba-93a2-b82b3574d162/tool-results//**)"
+    ]
+  }
+}

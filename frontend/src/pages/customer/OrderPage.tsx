@@ -1,13 +1,8 @@
 /**
  * Safe Order — Customer Order Page (FR-07, FR-08).
  *
- * Reached via a unique link (`/order/<token>`) generated when the merchant creates
- * an order. The page is intentionally usable without an account, but if the customer
- * is signed in we pre-fill name + phone + last-known address from their profile.
- *
- * The wilaya (58) and the delivery-company list are loaded from the backend so the
- * customer can never enter an unknown wilaya — the merchant's dashboard slices by
- * wilaya in Statistics (F12), so freeform input would corrupt the analytics.
+ * Reached via a unique link (`/order/<token>`). Usable without an account;
+ * if the customer is signed in we pre-fill name + phone + address.
  */
 import { useState, useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
@@ -16,8 +11,7 @@ import { paymentsApi } from '../../api/endpoints'
 import { authApi, DeliveryCompany } from '../../api/auth'
 import { useAuth } from '../../context/AuthContext'
 import { useT } from '../../i18n'
-import LanguagePicker from '../../components/LanguagePicker'
-import { Button, Input, Select, Spinner } from '../../components/ui'
+import CustomerHeader from '../../components/CustomerHeader'
 
 export default function CustomerOrder() {
   const { token } = useParams<{ token: string }>()
@@ -30,24 +24,20 @@ export default function CustomerOrder() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // Reference data (loaded once)
   const [wilayas, setWilayas] = useState<string[]>([])
   const [companies, setCompanies] = useState<DeliveryCompany[]>([])
 
-  // Fill form
   const [form, setForm] = useState({
     first_name: '', last_name: '', phone: '',
     delivery_company: '', delivery_mode: 'home' as 'home' | 'pickup',
     wilaya: '', municipality: '', address: '', remark: '',
   })
 
-  // Payment form
   const [payForm, setPayForm] = useState({
     method: 'cib' as 'cib' | 'dahabia' | 'baridimob',
     card_number: '', card_holder: '', expiry: '', cvv: '',
   })
 
-  // ── Load order + reference data ──────────────────────────────────────────
   useEffect(() => {
     if (!token) { setLoading(false); return }
     Promise.all([
@@ -58,16 +48,11 @@ export default function CustomerOrder() {
       setWilayas(w as string[])
       setCompanies(c as DeliveryCompany[])
       if (o) {
-        setOrder(o as OrderResponse)
         const ord = o as OrderResponse
-        // If the customer has already filled this order, jump past the form.
-        // The deposit is considered paid when the backend has stamped the
-        // SAFE_PAY badge — at that point we go straight to "done" instead of
-        // re-prompting for the card details.
+        setOrder(ord)
         if (ord.customer_first_name) {
           const alreadyPaid = ord.badge === 'safe_pay' || ord.safe_pay_amount === 0
           setStep(alreadyPaid ? 'done' : 'pay')
-          // Pre-fill payment-step state from existing data in case they come back.
           setForm(f => ({
             ...f,
             first_name: ord.customer_first_name || '',
@@ -85,10 +70,9 @@ export default function CustomerOrder() {
     }).finally(() => setLoading(false))
   }, [token])
 
-  // ── If the visitor is signed in, prefill the form from their profile ────
   useEffect(() => {
     if (!isAuthenticated || !user || user.role !== 'customer') return
-    if (order?.customer_first_name) return // already filled
+    if (order?.customer_first_name) return
     setForm(f => ({
       ...f,
       first_name: f.first_name || user.first_name,
@@ -105,20 +89,12 @@ export default function CustomerOrder() {
   const handleFill = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
-
-    // Client-side validation — backend will re-check.
     if (!/^0\d{9}$/.test(form.phone.replace(/\s/g, ''))) {
-      setError(t('order.invalid_link.title') === 'Invalid link' ? 'Invalid phone number (format 0XXXXXXXXX)' : 'Numéro de téléphone invalide (format 0XXXXXXXXX)')
+      setError('Numéro de téléphone invalide (format 0XXXXXXXXX)')
       return
     }
-    if (!form.wilaya) {
-      setError('Wilaya: ' + t('common.required'))
-      return
-    }
-    if (!form.delivery_company) {
-      setError(t('field.delivery_company') + ': ' + t('common.required'))
-      return
-    }
+    if (!form.wilaya) { setError('Wilaya: ' + t('common.required')); return }
+    if (!form.delivery_company) { setError(t('field.delivery_company') + ': ' + t('common.required')); return }
 
     setSubmitting(true)
     setError('')
@@ -164,313 +140,310 @@ export default function CustomerOrder() {
     [companies],
   )
 
-  if (loading) return <div className="auth-page"><Spinner /></div>
+  /* ---------- loading ---------- */
+  if (loading) {
+    return <div className="cs-page"><div className="cs-loading"><div className="cs-spinner" /></div></div>
+  }
 
+  /* ---------- invalid link ---------- */
   if (!order) {
     return (
-      <div className="auth-page">
-        <div style={{ position: 'absolute', top: 20, insetInlineEnd: 20 }}><LanguagePicker size="sm" /></div>
-        <div className="auth-card" style={{ textAlign: 'center' }}>
-          <span style={{ fontSize: 48 }}>❌</span>
-          <h2 style={{ marginTop: 16, fontSize: 18 }}>{t('order.invalid_link.title')}</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: 8, fontSize: 14 }}>
-            {t('order.invalid_link.desc')}
-          </p>
-          <Button
-            variant="outline"
-            fullWidth
-            style={{ marginTop: 16 }}
-            onClick={() => { window.location.href = '/order' }}
-          >
-            {t('order.paste.cta')}
-          </Button>
+      <div className="cs-page">
+        <CustomerHeader />
+        <div className="cs-shell narrow centered">
+          <div className="cs-card cs-card-pad">
+            <div className="cs-empty">
+              <div className="ic">⚠️</div>
+              <h3>{t('order.invalid_link.title')}</h3>
+              <p>{t('order.invalid_link.desc')}</p>
+            </div>
+            <button
+              className="cs-btn cs-btn--outline cs-btn--block"
+              onClick={() => { window.location.href = '/order' }}
+            >
+              {t('order.paste.cta')}
+            </button>
+          </div>
         </div>
       </div>
     )
   }
 
-  // ── Step: DONE ──────────────────────────────────────────────────────────
+  /* ---------- done ---------- */
   if (step === 'done') {
     return (
-      <div className="auth-page">
-        <div style={{ position: 'absolute', top: 20, insetInlineEnd: 20 }}><LanguagePicker size="sm" /></div>
-        <div className="auth-card" style={{ maxWidth: 480, textAlign: 'center' }}>
-          <span style={{ fontSize: 56 }}>✅</span>
-          <h2 style={{ marginTop: 16, fontSize: 20, fontWeight: 700 }}>{t('order.done.title')}</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: 8, fontSize: 14, lineHeight: 1.6 }}>
-            {t('order.done.subtitle')}
-          </p>
-          <div style={{ marginTop: 20, padding: 16, background: 'var(--color-bg-secondary)', borderRadius: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-              {t('order.done.tracking')}
+      <div className="cs-page">
+        <CustomerHeader />
+        <div className="cs-shell narrow centered">
+          <div className="cs-card cs-card-pad">
+            <div className="cs-hero">
+              <div className="mark">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h2>{t('order.done.title')}</h2>
+              <p>{t('order.done.subtitle')}</p>
+              <div className="cs-code-box">
+                <div className="k">{t('order.done.tracking')}</div>
+                <div className="v">{order.tracking_code}</div>
+              </div>
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-primary)', letterSpacing: 1 }}>
-              {order.tracking_code}
+            <div className="cs-tiles" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 16 }}>
+              <div className="cs-tile">
+                <div className="v">{(order.product_price + order.delivery_fee).toLocaleString()} DA</div>
+                <div className="l">{t('order.done.total')}</div>
+              </div>
+              <div className="cs-tile">
+                <div className="v green">{order.safe_pay_amount.toLocaleString()} DA</div>
+                <div className="l">Safe Pay</div>
+              </div>
             </div>
+            <button
+              className="cs-btn cs-btn--primary cs-btn--block"
+              style={{ marginTop: 16 }}
+              onClick={() => { window.location.href = `/track/${order.tracking_code}` }}
+            >
+              {t('order.done.track_cta')}
+            </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16, textAlign: 'center' }}>
-            <div style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 8 }}>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{t('order.done.total')}</div>
-              <div style={{ fontWeight: 600 }}>{(order.product_price + order.delivery_fee).toLocaleString()} DA</div>
-            </div>
-            <div style={{ padding: 12, background: 'var(--color-green-light)', borderRadius: 8 }}>
-              <div style={{ fontSize: 11, color: 'var(--color-green)' }}>SAFE PAY</div>
-              <div style={{ fontWeight: 600, color: 'var(--color-green)' }}>{order.safe_pay_amount.toLocaleString()} DA</div>
-            </div>
-          </div>
-          <Button variant="outline" fullWidth style={{ marginTop: 20 }} onClick={() => window.location.href = `/track/${order.tracking_code}`}>
-            {t('order.done.track_cta')}
-          </Button>
         </div>
       </div>
     )
   }
 
-  // ── Step: PAY ───────────────────────────────────────────────────────────
+  /* ---------- pay ---------- */
   if (step === 'pay') {
     return (
-      <div className="auth-page">
-        <div style={{ position: 'absolute', top: 20, insetInlineEnd: 20 }}><LanguagePicker size="sm" /></div>
-        <div className="auth-card" style={{ maxWidth: 460 }}>
-          <div className="auth-card__logo">
-            <div className="auth-card__logo-icon">🛡</div>
-            <span className="auth-card__logo-text">Safe Pay</span>
-          </div>
-          <h2 className="auth-card__title">{t('pay.title')}</h2>
-          <p
-            className="auth-card__subtitle"
-            dangerouslySetInnerHTML={{
-              __html: t('pay.subtitle').replace('{amount}', `<strong>${order.safe_pay_amount.toLocaleString()}</strong>`),
-            }}
-          />
-
-          <div style={{ padding: 14, background: 'var(--color-bg-secondary)', borderRadius: 10, marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{order.product_name}</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 4 }}>
-              {t('order.product.price')}: {order.product_price.toLocaleString()} DA · {t('status.delivery')}: {order.delivery_fee.toLocaleString()} DA
+      <div className="cs-page">
+        <CustomerHeader />
+        <div className="cs-shell narrow">
+          <div className="cs-intro">
+            <div className="cs-eyebrow">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
+              </svg>
+              Safe Pay
             </div>
+            <h1 className="cs-h1">{t('pay.title')}</h1>
+            <p
+              className="cs-sub"
+              dangerouslySetInnerHTML={{
+                __html: t('pay.subtitle').replace('{amount}', `<strong>${order.safe_pay_amount.toLocaleString()}</strong>`),
+              }}
+            />
           </div>
 
-          <form className="auth-card__form" onSubmit={handlePayment}>
-            <div className="form-field">
-              <label className="form-field__label">{t('pay.method')}</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {(['cib', 'dahabia', 'baridimob'] as const).map(method => (
-                  <button
-                    key={method}
-                    type="button"
-                    onClick={() => setPayForm(f => ({ ...f, method }))}
-                    style={{
-                      flex: 1, padding: '12px 8px', borderRadius: 10,
-                      border: `2px solid ${payForm.method === method ? '#0080ff' : '#e2e8f0'}`,
-                      background: payForm.method === method ? '#e8f3ff' : '#fff',
-                      fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 150ms ease',
-                      color: payForm.method === method ? '#0080ff' : '#64748b',
-                    }}
-                  >
-                    {method === 'cib' ? '💳 CIB' : method === 'dahabia' ? '🏦 Dahabia' : '📱 BaridiMob'}
-                  </button>
-                ))}
+          <div className="cs-card cs-card-pad">
+            <div className="cs-product" style={{ marginBottom: 18 }}>
+              <div className="pname">{order.product_name}</div>
+              <div className="pdesc">
+                {t('order.product.price')}: {order.product_price.toLocaleString()} DA · {t('status.delivery')}: {order.delivery_fee.toLocaleString()} DA
               </div>
             </div>
 
-            {payForm.method !== 'baridimob' && (
-              <>
-                <Input label={t('pay.card_number')} value={payForm.card_number} onChange={e => setPayForm(f => ({ ...f, card_number: e.target.value }))} placeholder="4111 1111 1111 1111" />
-                <Input label={t('pay.card_holder')} value={payForm.card_holder} onChange={e => setPayForm(f => ({ ...f, card_holder: e.target.value }))} placeholder="NOM PRENOM" />
-                <div className="form-field">
-                  <label className="form-field__label">{t('pay.expiry')}</label>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <select
-                      value={payForm.expiry.split('/')[0] || ''}
-                      onChange={e => {
-                        const yr = payForm.expiry.split('/')[1] || ''
-                        setPayForm(f => ({ ...f, expiry: e.target.value + '/' + yr }))
-                      }}
-                      className="form-field__input"
-                      style={{ flex: 1, appearance: 'auto' }}
-                    >
-                      <option value="">Mois</option>
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const m = String(i + 1).padStart(2, '0')
-                        return <option key={m} value={m}>{m}</option>
-                      })}
-                    </select>
-                    <select
-                      value={payForm.expiry.split('/')[1] || ''}
-                      onChange={e => {
-                        const mo = payForm.expiry.split('/')[0] || ''
-                        setPayForm(f => ({ ...f, expiry: mo + '/' + e.target.value }))
-                      }}
-                      className="form-field__input"
-                      style={{ flex: 1, appearance: 'auto' }}
-                    >
-                      <option value="">Année</option>
-                      {Array.from({ length: 11 }, (_, i) => {
-                        const y = String(new Date().getFullYear() + i).slice(-2)
-                        return <option key={y} value={y}>{y}</option>
-                      })}
-                    </select>
-                  </div>
-                </div>
-                <Input label={t('pay.cvv')} value={payForm.cvv} onChange={e => setPayForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) }))} placeholder="123" inputMode="numeric" maxLength={4} />
-              </>
-            )}
-
-            {payForm.method === 'baridimob' && (
-              <div style={{ padding: 16, background: 'var(--color-gold-light)', borderRadius: 10, textAlign: 'center' }}>
-                <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
-                  {t('pay.baridimob.instruction').replace('{amount}', order.safe_pay_amount.toLocaleString())}
-                </div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-navy)', marginTop: 8 }}>
-                  0799 000 000
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div style={{ padding: '10px 14px', background: '#fef2f2', color: '#dc2626', borderRadius: 8, fontSize: 13 }}>
-                {error}
-              </div>
-            )}
-
-            <Button type="submit" fullWidth loading={submitting}>
-              {t('pay.cta').replace('{amount}', order.safe_pay_amount.toLocaleString())}
-            </Button>
-
-            <p style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center' }}>
-              {t('pay.secure')}
-            </p>
-          </form>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Step: VIEW / FILL ───────────────────────────────────────────────────
-  return (
-    <div className="auth-page" style={{ minHeight: '100vh', padding: '40px 16px' }}>
-      <div style={{ position: 'absolute', top: 20, insetInlineEnd: 20 }}><LanguagePicker size="sm" /></div>
-      <div className="auth-card" style={{ maxWidth: 520, width: '100%', margin: '0 auto' }}>
-        <div className="auth-card__logo">
-          <div className="auth-card__logo-icon">🛡</div>
-          <span className="auth-card__logo-text">Safe Order</span>
-        </div>
-
-        {/* Product Info */}
-        <div style={{ padding: 16, background: 'var(--color-bg-secondary)', borderRadius: 12, marginBottom: 24 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>{order.product_name}</h3>
-          {order.product_description && (
-            <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 8, lineHeight: 1.5 }}>
-              {order.product_description}
-            </p>
-          )}
-          <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{t('order.product.price')}</div>
-              <div style={{ fontWeight: 700, fontSize: 18 }}>{order.product_price.toLocaleString()} DA</div>
-            </div>
-            {order.safe_pay_amount > 0 && (
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--color-green)' }}>{t('order.product.deposit')}</div>
-                <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--color-green)' }}>{order.safe_pay_amount.toLocaleString()} DA</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {step === 'view' ? (
-          <div>
-            <h2 className="auth-card__title">{t('order.fill.title')}</h2>
-            <p className="auth-card__subtitle">{t('order.fill.subtitle')}</p>
-            <Button fullWidth onClick={() => setStep('fill')}>
-              {t('order.fill.cta_view')}
-            </Button>
-          </div>
-        ) : (
-          <div>
-            <h2 className="auth-card__title">{t('order.delivery.title')}</h2>
-            <p className="auth-card__subtitle">{t('order.delivery.subtitle')}</p>
-
-            <form className="auth-card__form" onSubmit={handleFill}>
-              <div className="auth-card__row">
-                <Input label={t('field.first_name')} value={form.first_name} onChange={e => update('first_name', e.target.value)} required placeholder="Yassine" />
-                <Input label={t('field.last_name')} value={form.last_name} onChange={e => update('last_name', e.target.value)} required placeholder="Boudjema" />
-              </div>
-              <Input label={t('field.phone')} value={form.phone} onChange={e => update('phone', e.target.value)} required placeholder="0551234567" inputMode="tel" />
-
-              <Select
-                label={t('field.delivery_company')}
-                value={form.delivery_company}
-                onChange={e => update('delivery_company', e.target.value)}
-                options={companyOptions}
-                required
-              />
-
-              <div className="form-field">
-                <label className="form-field__label">{t('order.delivery.mode')}</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {(['home', 'pickup'] as const).map(mode => (
+            <form className="cs-form" onSubmit={handlePayment}>
+              <div className="cs-field" style={{ marginBottom: 0 }}>
+                <label>{t('pay.method')}</label>
+                <div className="cs-choices">
+                  {(['cib', 'dahabia', 'baridimob'] as const).map(method => (
                     <button
-                      key={mode}
+                      key={method}
                       type="button"
-                      onClick={() => update('delivery_mode', mode)}
-                      style={{
-                        flex: 1, padding: '10px', borderRadius: 8,
-                        border: `2px solid ${form.delivery_mode === mode ? '#0080ff' : '#e2e8f0'}`,
-                        background: form.delivery_mode === mode ? '#e8f3ff' : '#fff',
-                        fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                        color: form.delivery_mode === mode ? '#0080ff' : '#64748b',
-                      }}
+                      className={`cs-choice ${payForm.method === method ? 'active' : ''}`}
+                      onClick={() => setPayForm(f => ({ ...f, method }))}
                     >
-                      {mode === 'home' ? t('order.delivery.home') : t('order.delivery.pickup')}
+                      {method === 'cib' ? '💳 CIB' : method === 'dahabia' ? '🏦 Dahabia' : '📱 BaridiMob'}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="auth-card__row">
-                <Select
-                  label={t('field.wilaya')}
-                  value={form.wilaya}
-                  onChange={e => update('wilaya', e.target.value)}
-                  options={wilayaOptions}
-                  required
-                />
-                <Input
-                  label={t('field.municipality')}
-                  value={form.municipality}
-                  onChange={e => update('municipality', e.target.value)}
-                  required
-                  placeholder="Hydra"
-                />
-              </div>
-              <Input
-                label={t('field.address')}
-                value={form.address}
-                onChange={e => update('address', e.target.value)}
-                required
-                placeholder={t('order.field.address_placeholder')}
-              />
-              <Input
-                label={`${t('field.remark')} (${t('common.optional')})`}
-                value={form.remark}
-                onChange={e => update('remark', e.target.value)}
-                placeholder={t('order.field.remark_placeholder')}
-              />
+              {payForm.method !== 'baridimob' && (
+                <>
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>{t('pay.card_number')}</label>
+                    <input className="cs-input" value={payForm.card_number} onChange={e => setPayForm(f => ({ ...f, card_number: e.target.value }))} placeholder="4111 1111 1111 1111" />
+                  </div>
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>{t('pay.card_holder')}</label>
+                    <input className="cs-input" value={payForm.card_holder} onChange={e => setPayForm(f => ({ ...f, card_holder: e.target.value }))} placeholder="NOM PRENOM" />
+                  </div>
+                  <div className="cs-row">
+                    <div className="cs-field" style={{ marginBottom: 0 }}>
+                      <label>{t('pay.expiry')}</label>
+                      <select
+                        className="cs-select"
+                        value={payForm.expiry.split('/')[0] || ''}
+                        onChange={e => {
+                          const yr = payForm.expiry.split('/')[1] || ''
+                          setPayForm(f => ({ ...f, expiry: e.target.value + '/' + yr }))
+                        }}
+                      >
+                        <option value="">Mois</option>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const m = String(i + 1).padStart(2, '0')
+                          return <option key={m} value={m}>{m}</option>
+                        })}
+                      </select>
+                    </div>
+                    <div className="cs-field" style={{ marginBottom: 0 }}>
+                      <label>&nbsp;</label>
+                      <select
+                        className="cs-select"
+                        value={payForm.expiry.split('/')[1] || ''}
+                        onChange={e => {
+                          const mo = payForm.expiry.split('/')[0] || ''
+                          setPayForm(f => ({ ...f, expiry: mo + '/' + e.target.value }))
+                        }}
+                      >
+                        <option value="">Année</option>
+                        {Array.from({ length: 11 }, (_, i) => {
+                          const y = String(new Date().getFullYear() + i).slice(-2)
+                          return <option key={y} value={y}>{y}</option>
+                        })}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>{t('pay.cvv')}</label>
+                    <input className="cs-input" value={payForm.cvv} onChange={e => setPayForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) }))} placeholder="123" inputMode="numeric" maxLength={4} />
+                  </div>
+                </>
+              )}
 
-              {error && (
-                <div style={{ padding: '10px 14px', background: '#fef2f2', color: '#dc2626', borderRadius: 8, fontSize: 13 }}>
-                  {error}
+              {payForm.method === 'baridimob' && (
+                <div className="cs-note">
+                  {t('pay.baridimob.instruction').replace('{amount}', order.safe_pay_amount.toLocaleString())}
+                  <div style={{ fontSize: 18, fontWeight: 800, marginTop: 6 }}>0799 000 000</div>
                 </div>
               )}
 
-              <Button type="submit" fullWidth loading={submitting}>
-                {t('order.confirm')}
-              </Button>
+              {error && <div className="cs-error">{error}</div>}
+
+              <button type="submit" className="cs-btn cs-btn--primary cs-btn--block" disabled={submitting}>
+                {submitting ? <span className="cs-btn-spinner" /> : t('pay.cta').replace('{amount}', order.safe_pay_amount.toLocaleString())}
+              </button>
+              <p style={{ fontSize: 11, color: 'var(--cs-ink-4)', textAlign: 'center', margin: 0 }}>
+                {t('pay.secure')}
+              </p>
             </form>
           </div>
-        )}
+        </div>
+      </div>
+    )
+  }
+
+  /* ---------- view / fill ---------- */
+  return (
+    <div className="cs-page">
+      <CustomerHeader />
+      <div className="cs-shell mid">
+        <div className="cs-card cs-card-pad">
+          <div className="cs-product" style={{ marginBottom: 22 }}>
+            <div className="pname">{order.product_name}</div>
+            {order.product_description && <div className="pdesc">{order.product_description}</div>}
+            <div className="cs-price-row">
+              <div className="cs-price">
+                <div className="k">{t('order.product.price')}</div>
+                <div className="v">{order.product_price.toLocaleString()} DA</div>
+              </div>
+              {order.safe_pay_amount > 0 && (
+                <div className="cs-price green">
+                  <div className="k">{t('order.product.deposit')}</div>
+                  <div className="v">{order.safe_pay_amount.toLocaleString()} DA</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {step === 'view' ? (
+            <div>
+              <h1 className="cs-h1" style={{ fontSize: 21 }}>{t('order.fill.title')}</h1>
+              <p className="cs-sub" style={{ marginBottom: 18 }}>{t('order.fill.subtitle')}</p>
+              <button className="cs-btn cs-btn--primary cs-btn--block" onClick={() => setStep('fill')}>
+                {t('order.fill.cta_view')}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <h1 className="cs-h1" style={{ fontSize: 21 }}>{t('order.delivery.title')}</h1>
+              <p className="cs-sub" style={{ marginBottom: 18 }}>{t('order.delivery.subtitle')}</p>
+
+              <form className="cs-form" onSubmit={handleFill}>
+                <div className="cs-row">
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>{t('field.first_name')}</label>
+                    <input className="cs-input" value={form.first_name} onChange={e => update('first_name', e.target.value)} required placeholder="Yassine" />
+                  </div>
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>{t('field.last_name')}</label>
+                    <input className="cs-input" value={form.last_name} onChange={e => update('last_name', e.target.value)} required placeholder="Boudjema" />
+                  </div>
+                </div>
+
+                <div className="cs-field" style={{ marginBottom: 0 }}>
+                  <label>{t('field.phone')}</label>
+                  <input className="cs-input" value={form.phone} onChange={e => update('phone', e.target.value)} required placeholder="0551234567" inputMode="tel" />
+                </div>
+
+                <div className="cs-field" style={{ marginBottom: 0 }}>
+                  <label>{t('field.delivery_company')}</label>
+                  <select className="cs-select" value={form.delivery_company} onChange={e => update('delivery_company', e.target.value)} required>
+                    <option value="">{t('common.select_placeholder')}</option>
+                    {companyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+
+                <div className="cs-field" style={{ marginBottom: 0 }}>
+                  <label>{t('order.delivery.mode')}</label>
+                  <div className="cs-choices">
+                    {(['home', 'pickup'] as const).map(mode => (
+                      <button
+                        key={mode}
+                        type="button"
+                        className={`cs-choice ${form.delivery_mode === mode ? 'active' : ''}`}
+                        onClick={() => update('delivery_mode', mode)}
+                      >
+                        {mode === 'home' ? t('order.delivery.home') : t('order.delivery.pickup')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="cs-row">
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>{t('field.wilaya')}</label>
+                    <select className="cs-select" value={form.wilaya} onChange={e => update('wilaya', e.target.value)} required>
+                      <option value="">{t('common.select_placeholder')}</option>
+                      {wilayaOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div className="cs-field" style={{ marginBottom: 0 }}>
+                    <label>{t('field.municipality')}</label>
+                    <input className="cs-input" value={form.municipality} onChange={e => update('municipality', e.target.value)} required placeholder="Hydra" />
+                  </div>
+                </div>
+
+                <div className="cs-field" style={{ marginBottom: 0 }}>
+                  <label>{t('field.address')}</label>
+                  <input className="cs-input" value={form.address} onChange={e => update('address', e.target.value)} required placeholder={t('order.field.address_placeholder')} />
+                </div>
+
+                <div className="cs-field" style={{ marginBottom: 0 }}>
+                  <label>{t('field.remark')} ({t('common.optional')})</label>
+                  <input className="cs-input" value={form.remark} onChange={e => update('remark', e.target.value)} placeholder={t('order.field.remark_placeholder')} />
+                </div>
+
+                {error && <div className="cs-error">{error}</div>}
+
+                <button type="submit" className="cs-btn cs-btn--primary cs-btn--block" disabled={submitting}>
+                  {submitting ? <span className="cs-btn-spinner" /> : t('order.confirm')}
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
